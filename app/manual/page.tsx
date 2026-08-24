@@ -1,0 +1,40 @@
+"use client";
+import{useState}from"react";
+import"./manual.css";
+
+const problems=[
+ ["✓","수업 전 준비","교재·프린트·과제·교실 상태를 수업 시작 전에 확인합니다."],
+ ["◎","출결 확인","학생 출결을 정확히 확인하고 결석·지각 사항을 기록합니다."],
+ ["✎","수업 내용 기록","진도와 숙제, 학생 반응과 부족한 부분을 구체적으로 남깁니다."],
+ ["!","특이사항 보고","학생·학부모 관련 특이사항은 정해진 기준에 따라 원장에게 보고합니다."],
+ ["↻","다음 수업 준비","오늘 기록을 바탕으로 보충자료와 다음 수업 내용을 준비합니다."],
+ ["▤","업무 마감 확인","미완료 업무와 전달사항을 확인한 뒤 하루 업무를 마감합니다."]
+];
+const structure=[["01","담당자","누가 이 업무를 책임지는가"],["02","시점","언제 업무를 시작하는가"],["03","절차","어떤 순서로 실행하는가"],["04","완료기준","어디까지 해야 끝난 것인가"],["05","기록","무엇을 어디에 남기는가"],["06","예외대응","문제가 생기면 어떻게 처리하는가"],["07","보고기준","어떤 상황에서 누구에게 보고하는가"]];
+const categories=["상담","등록","수납","수업","학생관리","학부모관리","강사관리","행정"];
+const examples:Record<string,string>={상담:"신규 상담 문의 대응",등록:"신규생 등록 업무",수납:"미납 수강료 확인",수업:"수업 전 준비 점검",학생관리:"결석 학생 후속 관리",학부모관리:"정기 학습 피드백",강사관리:"신규 강사 온보딩",행정:"일일 마감 업무"};
+
+export default function Home(){
+ const[menu,setMenu]=useState(false),[level,setLevel]=useState("B"),[tab,setTab]=useState("상담");
+ return <main className="landing">
+  <header className="site-header"><a className="brand" href="#top"><span>M</span><b>벌교미래엔영어</b></a><nav className={menu?"open":""}><a href="#problem" onClick={()=>setMenu(false)}>업무원칙</a><a href="#system" onClick={()=>setMenu(false)}>업무 실행</a><a href="#manual" onClick={()=>setMenu(false)}>업무메뉴얼</a><a href="#process" onClick={()=>setMenu(false)}>업무루틴</a><a className="mobile-login" href="/staff">강사·관리자 로그인</a></nav><div className="header-actions"><a href="/staff" className="login-link">업무 로그인</a><a className="primary small" href="#diagnosis">강사 업무 작성</a><button className="hamburger" aria-label="메뉴" onClick={()=>setMenu(!menu)}>☰</button></div></header>
+  <section className="hero-new" id="top"><div className="hero-content"><span className="badge">● 벌교미래엔영어 내부 업무 시스템</span><h1>모든 강사가<br/>같은 기준으로 움직이는<br/><em>학원 업무메뉴얼</em></h1><p>수업 준비부터 출결, 상담, 학생관리, 마감 업무까지 벌교미래엔영어의 공통 업무 기준을 확인하고 매일 실행 내용을 기록합니다.</p><div className="cta-row"><a className="primary" href="#diagnosis">오늘 업무 체크하기 <b>→</b></a><a className="secondary" href="#example">업무 기준 확인하기</a></div><small>강사는 개인번호로 로그인해 업무를 체크하고 세부사항을 기록합니다.</small></div>
+   <div className="dashboard-mock"><div className="mock-top"><div><small>WORKFLOW · A-102</small><h2>신규생 등록 업무</h2></div><span>진행중</span></div><div className="meta-row"><div><small>담당자</small><b>행정</b></div><div><small>업무 시점</small><b>상담 등록 직후</b></div><div><small>진행률</small><b>60%</b></div></div><div className="progress"><i/></div><div className="mock-body"><div className="checklist"><b>업무 체크리스트</b>{["학생정보 등록","수강과목 확인","결제 확인","담당강사 전달","첫 수업 안내"].map((x,i)=><p key={x} className={i<3?"done":""}><span>{i<3?"✓":""}</span>{x}</p>)}</div><div className="criteria"><article><small>완료기준</small><p>학생정보 등록 완료</p><p>담당강사 전달 완료</p><p>첫 수업 일정 안내</p></article><article className="exception"><small>예외 대응</small><b>결제 미완료 → 원장 보고</b></article></div></div></div>
+  </section>
+  <section className="problem section" id="problem"><div className="center-head"><span className="eyebrow">OPERATING PROBLEMS</span><h2>벌교미래엔영어<br/>공통 업무 원칙</h2><p>모든 강사가 같은 기준으로 수업하고 기록하며 필요한 사항을 정확하게 보고합니다.</p></div><div className="problem-grid">{problems.map((x,i)=><article key={x[1]}><span>{x[0]}</span><small>0{i+1}</small><h3>{x[1]}</h3><p>{x[2]}</p></article>)}</div></section>
+  <section className="transition" id="system"><span className="eyebrow">THE REAL PROBLEM</span><h2>말로 전달하지 않고<br/><em>정해진 업무 기준</em>으로 실행합니다.</h2><div className="flow bad">{["공통 원칙","업무 확인","체크리스트 실행","세부사항 기록"].map(x=><span key={x}>{x}</span>)}</div><div className="flow good">{["업무 확인","업무 실행","체크리스트","기록","보고","원장 확인"].map(x=><span key={x}>{x}</span>)}</div></section>
+  <section className="manual-structure section" id="manual"><div className="split-head"><div><span className="eyebrow">EXECUTION SYSTEM</span><h2>좋은 업무메뉴얼은<br/>‘설명서’가 아니라<br/><em>‘실행 시스템’</em>입니다.</h2></div><p>직원이 읽고 이해하는 문서에서 끝나는 것이 아니라 누가, 언제, 무엇을, 어디까지 해야 하는지가 보여야 합니다.</p></div><div className="structure-flow">{structure.map(x=><article key={x[0]}><span>{x[0]}</span><b>{x[1]}</b><p>{x[2]}</p></article>)}</div></section>
+  <section className="compare section"><div className="center-head"><span className="eyebrow">BEFORE & AFTER</span><h2>업무메뉴얼이 생기면<br/>학원 운영 방식이 달라집니다.</h2></div><div className="compare-grid"><article className="before"><small>BEFORE</small><h3>원장 중심 운영</h3>{["업무 기준이 원장 머릿속에 있음","직원이 계속 질문함","문제가 생기면 원장이 판단","인수인계 때마다 다시 교육","직원에 따라 업무 품질이 달라짐","원장이 없으면 결정이 멈춤"].map(x=><p key={x}><span>×</span>{x}</p>)}</article><article className="after"><small>AFTER</small><h3>시스템 중심 운영</h3>{["업무 기준이 문서화되어 있음","직원이 기준을 보고 처리","예외 상황만 보고","체크리스트 기반 인수인계","동일한 완료기준 적용","원장이 없어도 일상업무 진행"].map(x=><p key={x}><span>✓</span>{x}</p>)}</article></div></section>
+  <section className="example section" id="example"><div className="split-head"><div><span className="eyebrow">REAL WORK EXAMPLE</span><h2>학원 업무는<br/>이 기준으로 실행합니다.</h2></div><p>업무를 확인한 뒤 체크하고, 특이사항과 조치 내용을 바로 기록합니다.</p></div><div className="tabs" role="tablist">{categories.map(x=><button role="tab" aria-selected={tab===x} className={tab===x?"active":""} onClick={()=>setTab(x)} key={x}>{x}</button>)}</div><div className="manual-ui"><aside><small>업무명</small><h3>{examples[tab]}</h3><dl><dt>담당자</dt><dd>{tab==="수업"?"담당강사":"행정"}</dd><dt>업무 시작</dt><dd>{tab==="상담"?"전화·문자·온라인 문의 접수 시":"해당 업무 발생 즉시"}</dd></dl></aside><div><h4>업무 절차</h4>{["학생 기본정보 확인","학교·학년 확인","희망 과목 확인","가능 일정 확인","일정 시스템 등록","담당자에게 전달","확정 메시지 발송"].map((x,i)=><p className="step" key={x}><span>{i+1}</span>{x}</p>)}</div><div className="manual-info"><article><small>완료기준</small><p>업무가 시스템에 등록되고 담당자와 학부모에게 내용이 전달된 상태</p></article><article><small>기록</small><p>상담관리표 또는 CRM</p></article><article><small>예외·보고</small><p>특수 요청 → 원장 확인<br/>미배정 건 → 마감 전 보고</p></article></div></div></section>
+  <section className="process section" id="process"><div className="center-head"><span className="eyebrow">BUILD PROCESS</span><h2>매일 같은 순서로 확인하고<br/>업무 내용을 기록합니다.</h2></div><div className="timeline">{[["01","출근 후 업무 확인","학원 규모, 역할, 업무도구, 세부사항 기록를 파악합니다."],["02","업무 체크리스트 실행","공통 원칙과 판단에 의존하는 업무를 찾아냅니다."],["03","세부사항 기록","학생 반응, 특이사항, 조치 내용과 다음 확인사항을 남깁니다."],["04","관리자 확인","원장은 강사별 완료율과 작성 기록을 확인합니다."]].map(x=><article key={x[0]}><span>STEP {x[0]}</span><b>{x[1]}</b><p>{x[2]}</p></article>)}</div></section>
+  <section className="diagnosis section" id="diagnosis"><div className="center-head"><span className="eyebrow">SELF DIAGNOSIS</span><h2>오늘 업무는<br/>어디까지 진행됐나요?</h2></div><div className="level-grid">{[["A","업무 확인 전","오늘 담당 업무와 수업 준비사항을 먼저 확인해 주세요."],["B","업무 진행 중","완료한 항목을 체크하고 특이사항은 바로 기록해 주세요."],["C","오늘 업무 완료","미완료 업무와 전달사항까지 확인한 뒤 마감해 주세요."]].map(x=><button onClick={()=>setLevel(x[0])} className={level===x[0]?"selected":""} key={x[0]}><span>{x[0]}</span><b>{x[1]}</b><p>{x[2]}</p><i>{level===x[0]?"선택됨":"선택하기"}</i></button>)}</div><a className="primary" href="/staff">강사 업무 로그인 <b>→</b></a></section>
+  <section className="values section"><span className="eyebrow">CORE VALUE</span><h2>메뉴얼의 목적은 문서를 만드는 것이 아닙니다.</h2><h3>원장이 직접 하지 않아도<br/><em>같은 기준으로 일이 진행되는 학원</em>을 만드는 것.</h3><div>{[["↻","반복 가능","직원이 바뀌어도 같은 방식으로 업무를 수행합니다."],["◎","확인 가능","업무가 어디까지 진행됐는지 확인할 수 있습니다."],["↗","개선 가능","문제가 생기면 사람 대신 업무 기준을 수정할 수 있습니다."]].map(x=><article key={x[1]}><span>{x[0]}</span><b>{x[1]}</b><p>{x[2]}</p></article>)}</div></section>
+  <section className="final-cta"><span>ACADEMY OPERATING SYSTEM</span><h2>벌교미래엔영어의 업무 기준,<br/>매일 확인하고 기록해 주세요.</h2><p>강사는 본인 업무를 체크하고 세부사항을 기록합니다.<br/>관리자는 전체 강사의 기록과 완료 현황을 확인합니다.</p><a className="primary light" href="/staff">오늘 업무 체크하기 <b>→</b></a><small>수업 · 출결 · 숙제 · 학생관리 · 학부모 소통 업무를 매일 확인합니다.</small></section>
+  <footer><div><a className="brand" href="#top"><span>M</span><b>벌교미래엔영어</b></a><p>모든 강사가 같은 기준으로 움직이는 학원 업무시스템.</p></div><nav><a href="#problem">업무원칙</a><a href="#manual">업무메뉴얼</a><a href="#diagnosis">업무현황</a><a href="/staff">강사·관리자 로그인</a></nav><small>© 2026 벌교미래엔영어. All rights reserved.</small></footer>
+ </main>
+}
+
+
+
+
+

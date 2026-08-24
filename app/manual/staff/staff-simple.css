@@ -1,0 +1,10 @@
+.login-shell{width:min(820px,100%)}
+.login-choice{margin-top:22px;display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+.staff-login .login-choice form,.admin-entry{width:auto;padding:34px;border:1px solid #d2ded8;border-radius:20px;background:#fff;box-shadow:0 22px 55px #153c2d16}
+.admin-entry{display:flex;flex-direction:column;color:#fff;background:var(--staff)}
+.admin-entry p{margin:0 0 8px;color:#72d4ae;font-size:10px;font-weight:900}
+.admin-entry h2{margin:0 0 8px;font-size:25px}.admin-entry small{color:#aebdc6;line-height:1.6}
+.admin-entry a{margin-top:auto;padding:15px;border-radius:10px;color:#123149;background:#fff;text-align:center;text-decoration:none;font-weight:900}
+.admin-entry a.manual-home{margin-top:9px;border:1px solid #ffffff30;color:#fff;background:transparent}
+.staff-login .login-choice form>p{margin:0 0 7px;color:var(--green);font-size:10px;font-weight:900;letter-spacing:0}
+@media(max-width:700px){.login-choice{grid-template-columns:1fr}.admin-entry a{margin-top:24px}}

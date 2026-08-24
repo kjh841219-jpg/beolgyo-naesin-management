@@ -1,0 +1,71 @@
+from pathlib import Path
+from gtts import gTTS
+
+SENTENCES = [
+    "I eat an apple.",
+    "Open your book, please.",
+    "Minsu plays soccer after school.",
+    "I drink water after exercise.",
+    "Please bring a photo for our class project tomorrow.",
+    "It will rain tomorrow, so we will visit the museum instead of the park.",
+    "I enjoy taking pictures, so I want to join the photography club.",
+    "The weekend market opens at ten in the morning.",
+    "Let's turn off the lights when we leave the classroom.",
+    "This app reminds me when it is time to take my medicine.",
+    "All performers must meet in the gym thirty minutes before the festival begins.",
+    "I put my phone in another room while I was studying.",
+    "Motivation may get you started, but a consistent routine is what keeps you moving forward.",
+    "Before sharing an online claim, check who created it and whether reliable evidence supports it.",
+    "The cat is under the table.",
+    "Can I have some orange juice, please?",
+    "Our class meeting starts at three thirty.",
+    "Could you show me the way to the nearest subway station?",
+    "Let's meet in front of the library at two.",
+    "Due to heavy rain, today's baseball game has been canceled.",
+    "Productive feedback focuses on specific actions that can be improved rather than judging the person.",
+    "Good morning! Please put your bag on the chair.",
+    "My sister has a small white rabbit.",
+    "We eat lunch at twelve thirty.",
+    "Please wash your hands before dinner.",
+    "The school bus will arrive five minutes late.",
+    "Judy chose the blue notebook because it was cheaper.",
+    "The music club meets every Wednesday after school.",
+    "I could not go hiking because I had a cold.",
+    "Students can borrow up to three books for two weeks.",
+    "Remember to submit your science report by Friday.",
+    "The train was delayed because of the heavy snow.",
+    "Using a reusable cup can reduce unnecessary waste.",
+    "The speaker recommends taking short breaks during long study sessions.",
+    "Although the first plan failed, the team learned how to improve it.",
+    "The lecture has been moved from Room 201 to the main hall.",
+    "The girl decided to volunteer after learning about the local shelter.",
+    "The experiment should be repeated to make sure the result is reliable.",
+    "The museum offers a guided tour in English every Saturday afternoon.",
+    "The author argues that failure can provide valuable information for future decisions.",
+    "Technological convenience should be evaluated alongside its social and environmental effects.",
+    "A persuasive argument acknowledges opposing views before presenting stronger evidence.",
+    "The student missed the bus, so she walked to school.",
+    "Please bring your worksheet to the next English class.",
+    "The library closes earlier than usual during the vacation.",
+    "The survey suggests that regular exercise improves students' concentration.",
+    "The speaker changed her opinion after examining additional evidence.",
+    "The new policy aims to reduce waste without limiting consumer choice.",
+    "The apparent simplicity of the solution may conceal several long-term risks.",
+    "Scientific progress often depends on questioning assumptions that were once widely accepted.",
+    "The speaker implies that efficiency alone cannot justify a decision with irreversible consequences.",
+    "Can I have some milk, please?",
+    "I will visit my grandmother after school.",
+    "I cannot find my red pencil case.",
+    "I will be late because the bus is stuck in traffic.",
+    "The art class will begin at two instead of one thirty.",
+    "Please upload your presentation slides before Thursday evening.",
+    "A surprising result should be investigated carefully rather than dismissed as an error.",
+]
+
+target = Path(__file__).resolve().parents[1] / "public" / "daily-audio"
+target.mkdir(parents=True, exist_ok=True)
+for index, sentence in enumerate(SENTENCES, start=1):
+    output = target / f"listening-{index:02d}.mp3"
+    if not output.exists():
+        gTTS(sentence, lang="en", tld="com", slow=False).save(str(output))
+    print(f"{index:02d} {output.name}")

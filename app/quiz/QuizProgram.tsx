@@ -358,17 +358,22 @@ export default function QuizProgram() {
           `${i + 1}. [${x.grade} ${x.lesson} · ${x.passage}]\n${x.sentence.ko}\n영어 문장: ________________________________________________\n____________________________________________________________`,
       )
       .join("\n\n");
-  const printCurrentQuestion = () => {
+  const printCurrentPassage = () => {
     const typeLabel =
       type === "translate"
         ? "해석 쓰기"
         : type === "order"
           ? "본문 순서 배열"
           : "전체 해석 보고 쓰기";
-    const prompt = type === "translate" ? sentence.en : sentence.ko;
+    const rows = current.sentences
+      .map(
+        (row, i) =>
+          `<article><b>${i + 1}번</b><p>${type === "translate" ? row.en : row.ko}</p><div class="line"></div><div class="line"></div>${type === "translate" ? "" : '<div class="line"></div>'}</article>`,
+      )
+      .join("");
     const popup = window.open("", "_blank", "width=900,height=720");
     if (!popup) return window.print();
-    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 문제</title><style>@page{size:A4;margin:18mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px}.meta{color:#66758a;font-size:12px;margin-bottom:34px}.question{padding:25px;border:1px solid #cfd7e3;border-radius:12px}.question b{display:block;margin-bottom:14px;color:#1764c0}.question p{font-size:18px;line-height:1.8}.line{height:38px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · ${current.title}<br>이름: ____________ 날짜: ____________</div><section class="question"><b>${index + 1}번 문제</b><p>${prompt}</p><div class="line"></div><div class="line"></div><div class="line"></div></section></body></html>`);
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 전체 본문 문제지</title><style>@page{size:A4;margin:13mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px;margin-bottom:6px}.meta{color:#66758a;font-size:12px;margin-bottom:24px}article{padding:15px 0;border-bottom:1px solid #cfd7e3;page-break-inside:avoid}article b{display:block;margin-bottom:8px;color:#1764c0;font-size:12px}article p{font-size:16px;line-height:1.7;margin:0 0 5px}.line{height:29px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · ${current.title} · 총 ${current.sentences.length}문장<br>이름: ____________ 날짜: ____________ 점수: ________</div>${rows}</body></html>`);
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
@@ -891,8 +896,8 @@ export default function QuizProgram() {
             </div>
           )}
           <div className="quiz-actions">
-            <button className="print-question" onClick={printCurrentQuestion}>
-              현재 문제 인쇄
+            <button className="print-question" onClick={printCurrentPassage}>
+              전체 지문 인쇄
             </button>
             <button
               className="print-wrong-question"

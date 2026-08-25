@@ -1,97 +1,1152 @@
 "use client";
-import {FormEvent,useEffect,useMemo,useState} from "react";
-import {additionalPassages} from "./additionalQuizData";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { additionalPassages } from "./additionalQuizData";
 import BlankWrongReview from "./BlankWrongReview";
-import {speakEnglish} from "../lib/speakEnglish";
+import { speakEnglish } from "../lib/speakEnglish";
 
-type Sentence={en:string;ko:string;keywords:string[]};
-type Passage={title:string;publisher?:string;grade?:string;lesson?:string;sentences:Sentence[]};
-const passages:Passage[]=[
- {title:"본문 1 · 스포츠 기자 Ms. Ali",sentences:[
-  {en:"Do you love sports?",ko:"당신은 스포츠를 좋아하시나요?",keywords:["스포츠","좋아"]},
-  {en:"If you do, you can have a career in sports.",ko:"그렇다면 당신은 스포츠 분야에서 직업을 가질 수 있습니다.",keywords:["스포츠","분야","직업"]},
-  {en:"Let’s meet some people who are working in the sports field.",ko:"스포츠 현장에서 일하고 있는 몇몇 사람들을 만나 봅시다.",keywords:["스포츠","현장","사람","만나"]},
-  {en:"Hello, Ms. Ali.",ko:"안녕하세요, Ali 씨.",keywords:["안녕","Ali"]},
-  {en:"Can you tell me why you became a sports journalist?",ko:"왜 스포츠 기자가 되셨는지 말씀해 주시겠어요?",keywords:["왜","스포츠","기자","말씀"]},
-  {en:"Well, I’ve always had a passion for sports and writing.",ko:"음, 저는 항상 스포츠와 글쓰기에 대한 열정을 가지고 있었습니다.",keywords:["항상","스포츠","글쓰기","열정"]},
-  {en:"Writing about sports makes me excited.",ko:"스포츠에 관해 글을 쓰는 것은 저를 신나게 합니다.",keywords:["스포츠","글","신나"]},
-  {en:"There was a big baseball game yesterday.",ko:"어제 큰 야구 경기가 있었습니다.",keywords:["어제","큰","야구","경기"]},
-  {en:"How did you spend the day?",ko:"하루를 어떻게 보내셨나요?",keywords:["하루","어떻게","보내"]},
-  {en:"I arrived at the baseball park early.",ko:"저는 야구장에 일찍 도착했습니다.",keywords:["야구장","일찍","도착"]},
-  {en:"Before the game started, I had an interview with the players.",ko:"경기가 시작되기 전에 저는 선수들과 인터뷰를 했습니다.",keywords:["경기","시작","선수","인터뷰"]},
-  {en:"I took a lot of notes during the game.",ko:"경기 중에는 메모를 많이 했습니다.",keywords:["경기","메모","많이"]},
-  {en:"After the game, I went to the press conference with other journalists.",ko:"경기 후에는 다른 기자들과 기자 회견에 갔습니다.",keywords:["경기","후","기자","회견"]},
-  {en:"I asked the players how they felt about the game.",ko:"저는 선수들에게 경기에 대해 어떻게 느꼈는지 물었습니다.",keywords:["선수","경기","느꼈","물었"]},
-  {en:"In the afternoon, I had to write an article and edit it very quickly.",ko:"오후에는 기사를 작성하고 그것을 매우 빠르게 편집해야 했습니다.",keywords:["오후","기사","작성","빠르게","편집"]},
-  {en:"My article was posted online.",ko:"제 기사는 온라인에 게시되었습니다.",keywords:["기사","온라인","게시"]},
-  {en:"I love writing about sports.",ko:"저는 스포츠에 관한 글을 쓰는 것을 매우 좋아합니다.",keywords:["스포츠","글","쓰","좋아"]}
- ]},
- {title:"본문 2 · 스포츠 에이전트 Mr. Davis",sentences:[
-  {en:"Mr. Davis, do you like your job as a sports agent?",ko:"Davis 씨, 스포츠 에이전트로서의 당신의 직업이 마음에 드시나요?",keywords:["Davis","스포츠","에이전트","직업","마음"]},
-  {en:"I love sports, and I enjoy everything about business.",ko:"저는 스포츠를 매우 좋아하고 사업에 관한 모든 것을 즐깁니다.",keywords:["스포츠","사업","모든","즐"]},
-  {en:"I think my job is perfect for me.",ko:"제 직업은 저에게 완벽하다고 생각합니다.",keywords:["직업","완벽","생각"]},
-  {en:"Can you tell me more about your job?",ko:"당신의 직업에 대해 좀 더 말씀해 주시겠어요?",keywords:["직업","더","말씀"]},
-  {en:"When my clients have a new contract to sign, I check it carefully.",ko:"제 고객이 서명할 새로운 계약이 있을 때, 저는 그것을 신중하게 확인합니다.",keywords:["고객","서명","계약","신중","확인"]},
-  {en:"I do my best to make the contract fair for them.",ko:"저는 그들을 위해 계약을 공정하게 만들기 위해 최선을 다합니다.",keywords:["계약","공정","최선"]},
-  {en:"Also, I often receive phone calls from advertising companies.",ko:"또한 저는 종종 광고 회사로부터 전화를 받습니다.",keywords:["또한","종종","광고","회사","전화"]},
-  {en:"They want my clients in their advertisements.",ko:"그들은 그들의 광고에 제 고객들을 원합니다.",keywords:["광고","고객","원"]},
-  {en:"I try to get the best deal for my clients.",ko:"저는 제 고객들을 위해 최선의 거래를 얻고자 노력합니다.",keywords:["고객","최선","거래","노력"]}
- ]},
- {title:"본문 3 · 스포츠 통계 전문가 Ms. Lee",sentences:[
-  {en:"I want to know why you wanted to be a sports statistician, Ms. Lee.",ko:"Lee 씨, 당신이 왜 스포츠 통계 전문가가 되고 싶었는지 알고 싶어요.",keywords:["Lee","왜","스포츠","통계","전문가","알고"]},
-  {en:"I wanted to be a sports statistician because I liked to analyze sports with numbers.",ko:"저는 스포츠를 수치로 분석하는 것을 좋아했기 때문에 스포츠 통계 전문가가 되고 싶었습니다.",keywords:["스포츠","수치","분석","통계","전문가"]},
-  {en:"Above all, I love ice hockey.",ko:"무엇보다도, 저는 아이스하키를 매우 좋아합니다.",keywords:["무엇보다","아이스하키","좋아"]},
-  {en:"I don’t know much about a sports statistician.",ko:"저는 스포츠 통계 전문가에 대해 잘 모릅니다.",keywords:["스포츠","통계","전문가","모르"]},
-  {en:"Can you explain it to me?",ko:"저에게 그것을 설명해 주시겠어요?",keywords:["저","그것","설명"]},
-  {en:"A sports statistician is someone who collects data and studies numbers about sports games.",ko:"스포츠 통계 전문가는 스포츠 경기에 대한 데이터를 수집하고 수치를 연구하는 사람입니다.",keywords:["통계","전문가","데이터","수집","수치","연구"]},
-  {en:"Our team is going to play against the Ice Lions this Saturday.",ko:"우리 팀은 이번 주 토요일에 아이스 라이온즈와 경기를 할 것입니다.",keywords:["우리","팀","토요일","아이스","라이온즈","경기"]},
-  {en:"Last week, I carefully watched the Ice Lions’ games and analyzed their shots.",ko:"지난주에 저는 아이스 라이온즈의 경기를 주의 깊게 지켜보고 그들의 슛을 분석했습니다.",keywords:["지난주","경기","슛","분석"]},
-  {en:"I found that they let in 70 percent of the shots from the left side.",ko:"저는 그들이 왼쪽에서 70퍼센트의 슛을 허용한 것을 발견했습니다.",keywords:["왼쪽","70","퍼센트","슛","허용","발견"]},
-  {en:"This showed their left side was weak.",ko:"이는 그들의 왼쪽이 약하다는 것을 보여 주었습니다.",keywords:["왼쪽","약","보여"]},
-  {en:"Then, I shared this finding with our players.",ko:"그다음, 저는 이 결과를 우리 선수들과 공유했습니다.",keywords:["그다음","결과","선수","공유"]},
-  {en:"I’m happy to use my data to help our team.",ko:"저는 우리 팀을 돕기 위해 제 데이터를 사용해서 기쁩니다.",keywords:["팀","돕","데이터","기쁨"]}
- ]}
+type Sentence = { en: string; ko: string; keywords: string[] };
+type Passage = {
+  title: string;
+  publisher?: string;
+  grade?: string;
+  lesson?: string;
+  sentences: Sentence[];
+};
+const passages: Passage[] = [
+  {
+    title: "본문 1 · 스포츠 기자 Ms. Ali",
+    sentences: [
+      {
+        en: "Do you love sports?",
+        ko: "당신은 스포츠를 좋아하시나요?",
+        keywords: ["스포츠", "좋아"],
+      },
+      {
+        en: "If you do, you can have a career in sports.",
+        ko: "그렇다면 당신은 스포츠 분야에서 직업을 가질 수 있습니다.",
+        keywords: ["스포츠", "분야", "직업"],
+      },
+      {
+        en: "Let’s meet some people who are working in the sports field.",
+        ko: "스포츠 현장에서 일하고 있는 몇몇 사람들을 만나 봅시다.",
+        keywords: ["스포츠", "현장", "사람", "만나"],
+      },
+      {
+        en: "Hello, Ms. Ali.",
+        ko: "안녕하세요, Ali 씨.",
+        keywords: ["안녕", "Ali"],
+      },
+      {
+        en: "Can you tell me why you became a sports journalist?",
+        ko: "왜 스포츠 기자가 되셨는지 말씀해 주시겠어요?",
+        keywords: ["왜", "스포츠", "기자", "말씀"],
+      },
+      {
+        en: "Well, I’ve always had a passion for sports and writing.",
+        ko: "음, 저는 항상 스포츠와 글쓰기에 대한 열정을 가지고 있었습니다.",
+        keywords: ["항상", "스포츠", "글쓰기", "열정"],
+      },
+      {
+        en: "Writing about sports makes me excited.",
+        ko: "스포츠에 관해 글을 쓰는 것은 저를 신나게 합니다.",
+        keywords: ["스포츠", "글", "신나"],
+      },
+      {
+        en: "There was a big baseball game yesterday.",
+        ko: "어제 큰 야구 경기가 있었습니다.",
+        keywords: ["어제", "큰", "야구", "경기"],
+      },
+      {
+        en: "How did you spend the day?",
+        ko: "하루를 어떻게 보내셨나요?",
+        keywords: ["하루", "어떻게", "보내"],
+      },
+      {
+        en: "I arrived at the baseball park early.",
+        ko: "저는 야구장에 일찍 도착했습니다.",
+        keywords: ["야구장", "일찍", "도착"],
+      },
+      {
+        en: "Before the game started, I had an interview with the players.",
+        ko: "경기가 시작되기 전에 저는 선수들과 인터뷰를 했습니다.",
+        keywords: ["경기", "시작", "선수", "인터뷰"],
+      },
+      {
+        en: "I took a lot of notes during the game.",
+        ko: "경기 중에는 메모를 많이 했습니다.",
+        keywords: ["경기", "메모", "많이"],
+      },
+      {
+        en: "After the game, I went to the press conference with other journalists.",
+        ko: "경기 후에는 다른 기자들과 기자 회견에 갔습니다.",
+        keywords: ["경기", "후", "기자", "회견"],
+      },
+      {
+        en: "I asked the players how they felt about the game.",
+        ko: "저는 선수들에게 경기에 대해 어떻게 느꼈는지 물었습니다.",
+        keywords: ["선수", "경기", "느꼈", "물었"],
+      },
+      {
+        en: "In the afternoon, I had to write an article and edit it very quickly.",
+        ko: "오후에는 기사를 작성하고 그것을 매우 빠르게 편집해야 했습니다.",
+        keywords: ["오후", "기사", "작성", "빠르게", "편집"],
+      },
+      {
+        en: "My article was posted online.",
+        ko: "제 기사는 온라인에 게시되었습니다.",
+        keywords: ["기사", "온라인", "게시"],
+      },
+      {
+        en: "I love writing about sports.",
+        ko: "저는 스포츠에 관한 글을 쓰는 것을 매우 좋아합니다.",
+        keywords: ["스포츠", "글", "쓰", "좋아"],
+      },
+    ],
+  },
+  {
+    title: "본문 2 · 스포츠 에이전트 Mr. Davis",
+    sentences: [
+      {
+        en: "Mr. Davis, do you like your job as a sports agent?",
+        ko: "Davis 씨, 스포츠 에이전트로서의 당신의 직업이 마음에 드시나요?",
+        keywords: ["Davis", "스포츠", "에이전트", "직업", "마음"],
+      },
+      {
+        en: "I love sports, and I enjoy everything about business.",
+        ko: "저는 스포츠를 매우 좋아하고 사업에 관한 모든 것을 즐깁니다.",
+        keywords: ["스포츠", "사업", "모든", "즐"],
+      },
+      {
+        en: "I think my job is perfect for me.",
+        ko: "제 직업은 저에게 완벽하다고 생각합니다.",
+        keywords: ["직업", "완벽", "생각"],
+      },
+      {
+        en: "Can you tell me more about your job?",
+        ko: "당신의 직업에 대해 좀 더 말씀해 주시겠어요?",
+        keywords: ["직업", "더", "말씀"],
+      },
+      {
+        en: "When my clients have a new contract to sign, I check it carefully.",
+        ko: "제 고객이 서명할 새로운 계약이 있을 때, 저는 그것을 신중하게 확인합니다.",
+        keywords: ["고객", "서명", "계약", "신중", "확인"],
+      },
+      {
+        en: "I do my best to make the contract fair for them.",
+        ko: "저는 그들을 위해 계약을 공정하게 만들기 위해 최선을 다합니다.",
+        keywords: ["계약", "공정", "최선"],
+      },
+      {
+        en: "Also, I often receive phone calls from advertising companies.",
+        ko: "또한 저는 종종 광고 회사로부터 전화를 받습니다.",
+        keywords: ["또한", "종종", "광고", "회사", "전화"],
+      },
+      {
+        en: "They want my clients in their advertisements.",
+        ko: "그들은 그들의 광고에 제 고객들을 원합니다.",
+        keywords: ["광고", "고객", "원"],
+      },
+      {
+        en: "I try to get the best deal for my clients.",
+        ko: "저는 제 고객들을 위해 최선의 거래를 얻고자 노력합니다.",
+        keywords: ["고객", "최선", "거래", "노력"],
+      },
+    ],
+  },
+  {
+    title: "본문 3 · 스포츠 통계 전문가 Ms. Lee",
+    sentences: [
+      {
+        en: "I want to know why you wanted to be a sports statistician, Ms. Lee.",
+        ko: "Lee 씨, 당신이 왜 스포츠 통계 전문가가 되고 싶었는지 알고 싶어요.",
+        keywords: ["Lee", "왜", "스포츠", "통계", "전문가", "알고"],
+      },
+      {
+        en: "I wanted to be a sports statistician because I liked to analyze sports with numbers.",
+        ko: "저는 스포츠를 수치로 분석하는 것을 좋아했기 때문에 스포츠 통계 전문가가 되고 싶었습니다.",
+        keywords: ["스포츠", "수치", "분석", "통계", "전문가"],
+      },
+      {
+        en: "Above all, I love ice hockey.",
+        ko: "무엇보다도, 저는 아이스하키를 매우 좋아합니다.",
+        keywords: ["무엇보다", "아이스하키", "좋아"],
+      },
+      {
+        en: "I don’t know much about a sports statistician.",
+        ko: "저는 스포츠 통계 전문가에 대해 잘 모릅니다.",
+        keywords: ["스포츠", "통계", "전문가", "모르"],
+      },
+      {
+        en: "Can you explain it to me?",
+        ko: "저에게 그것을 설명해 주시겠어요?",
+        keywords: ["저", "그것", "설명"],
+      },
+      {
+        en: "A sports statistician is someone who collects data and studies numbers about sports games.",
+        ko: "스포츠 통계 전문가는 스포츠 경기에 대한 데이터를 수집하고 수치를 연구하는 사람입니다.",
+        keywords: ["통계", "전문가", "데이터", "수집", "수치", "연구"],
+      },
+      {
+        en: "Our team is going to play against the Ice Lions this Saturday.",
+        ko: "우리 팀은 이번 주 토요일에 아이스 라이온즈와 경기를 할 것입니다.",
+        keywords: ["우리", "팀", "토요일", "아이스", "라이온즈", "경기"],
+      },
+      {
+        en: "Last week, I carefully watched the Ice Lions’ games and analyzed their shots.",
+        ko: "지난주에 저는 아이스 라이온즈의 경기를 주의 깊게 지켜보고 그들의 슛을 분석했습니다.",
+        keywords: ["지난주", "경기", "슛", "분석"],
+      },
+      {
+        en: "I found that they let in 70 percent of the shots from the left side.",
+        ko: "저는 그들이 왼쪽에서 70퍼센트의 슛을 허용한 것을 발견했습니다.",
+        keywords: ["왼쪽", "70", "퍼센트", "슛", "허용", "발견"],
+      },
+      {
+        en: "This showed their left side was weak.",
+        ko: "이는 그들의 왼쪽이 약하다는 것을 보여 주었습니다.",
+        keywords: ["왼쪽", "약", "보여"],
+      },
+      {
+        en: "Then, I shared this finding with our players.",
+        ko: "그다음, 저는 이 결과를 우리 선수들과 공유했습니다.",
+        keywords: ["그다음", "결과", "선수", "공유"],
+      },
+      {
+        en: "I’m happy to use my data to help our team.",
+        ko: "저는 우리 팀을 돕기 위해 제 데이터를 사용해서 기쁩니다.",
+        keywords: ["팀", "돕", "데이터", "기쁨"],
+      },
+    ],
+  },
 ];
-const normalize=(x:string)=>x.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9가-힣]/g,"");
-const chunks=(s:string)=>s.replace(/[?.!,]/g,"").split(" ");
-export const quizPassages:Passage[]=[...passages,...additionalPassages];
+const normalize = (x: string) =>
+  x
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/[^a-z0-9가-힣]/g, "");
+const chunks = (s: string) => s.replace(/[?.!,]/g, "").split(" ");
+export const quizPassages: Passage[] = [...passages, ...additionalPassages];
 
-export default function QuizProgram(){
- const[type,setType]=useState<"translate"|"order"|"write">("translate"),[passage,setPassage]=useState(0),[index,setIndex]=useState(0),[answer,setAnswer]=useState(""),[checked,setChecked]=useState(false),[built,setBuilt]=useState<string[]>([]),[score,setScore]=useState(0),[solved,setSolved]=useState(0),[student,setStudent]=useState<any>(null),[ready,setReady]=useState(false),[name,setName]=useState(""),[code,setCode]=useState(""),[loginMode,setLoginMode]=useState<"student"|"admin">("student"),[adminPassword,setAdminPassword]=useState(""),[loginError,setLoginError]=useState(""),[saving,setSaving]=useState(false),[history,setHistory]=useState<any>({daily:[],types:[],recent:[],wrong:[]}),[adminWrong,setAdminWrong]=useState<any[]>([]),[reviewQueue,setReviewQueue]=useState<any[]>([]),[reviewPosition,setReviewPosition]=useState(0),[copyNotice,setCopyNotice]=useState("");
- const current=quizPassages[passage],sentence=current.sentences[index];
- const currentPublisher=current.publisher||"천재교육 · 소영순",currentGrade=current.grade||"중학교 2학년",currentLesson=current.lesson||"5과";
- const publishers=[...new Set(quizPassages.map(p=>p.publisher||"천재교육 · 소영순"))];
- const grades=[...new Set(quizPassages.filter(p=>(p.publisher||"천재교육 · 소영순")===currentPublisher).map(p=>p.grade||"중학교 2학년"))];
- const lessonPassages=quizPassages.map((p,i)=>({p,i})).filter(({p})=>(p.publisher||"천재교육 · 소영순")===currentPublisher&&(p.grade||"중학교 2학년")===currentGrade);
- const wrongItems=useMemo(()=>student?.adminPractice?adminWrong:(history.wrong||[]).map((w:any)=>{if(!["translate","order","write"].includes(w.quizType))return null;const passageIndex=quizPassages.findIndex(p=>(p.publisher||"천재교육 · 소영순")===w.publisher&&(p.grade||"중학교 2학년")===w.grade&&(p.lesson||"5과")===w.lesson&&p.title===w.passage);if(passageIndex<0)return null;const sentence=quizPassages[passageIndex].sentences[Number(w.questionIndex)-1];return sentence?{...w,passageIndex,sentence}:null}).filter(Boolean),[history.wrong,adminWrong,student?.adminPractice]);
- const shuffled=useMemo(()=>chunks(sentence.en).map((word,i)=>({word,key:`${word}-${i}`})).sort((a,b)=>normalize(a.key).localeCompare(normalize(b.key))),[sentence.en]);
- const openWrong=(item:any)=>{setPassage(item.passageIndex);setIndex(Number(item.questionIndex)-1);setType(item.quizType);setAnswer("");setBuilt([]);setChecked(false)};
- const startWrongReview=()=>{if(!wrongItems.length)return;setReviewQueue(wrongItems);setReviewPosition(0);openWrong(wrongItems[0])};
- const next=()=>{if(reviewQueue.length){const nextPosition=reviewPosition+1;if(nextPosition<reviewQueue.length){setReviewPosition(nextPosition);openWrong(reviewQueue[nextPosition])}else{setReviewQueue([]);setReviewPosition(0);setIndex((index+1)%current.sentences.length);setAnswer("");setBuilt([]);setChecked(false)}return}setIndex((index+1)%current.sentences.length);setAnswer("");setBuilt([]);setChecked(false)};
- const worksheetText=()=>wrongItems.map((x:any,i:number)=>`${i+1}. [${x.grade} ${x.lesson} · ${x.passage}]\n${x.sentence.ko}\n영어 문장: ________________________________________________\n____________________________________________________________`).join("\n\n");
- const copyWorksheet=async()=>{await navigator.clipboard.writeText(`${student?.name||"학생"} 본문 오답 복습지\n\n${worksheetText()}`);setCopyNotice("복사 완료");setTimeout(()=>setCopyNotice(""),1800)};
- const downloadWorksheet=()=>{const rows=wrongItems.map((x:any,i:number)=>`<div class="question"><b>${i+1}. ${x.grade} ${x.lesson} · ${x.passage}</b><p>${x.sentence.ko}</p><div class="line"></div><div class="line"></div></div>`).join("");const html=`<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:'Malgun Gothic',sans-serif;padding:36px;color:#111}h1{font-size:24px}.meta{margin-bottom:28px}.question{page-break-inside:avoid;margin:0 0 28px}.question b{font-size:12px;color:#345}.question p{font-size:15px}.line{height:28px;border-bottom:1px solid #777}</style></head><body><h1>${student?.name||"학생"} 본문 오답 복습지</h1><div class="meta">이름: ____________ 날짜: ____________ · 총 ${wrongItems.length}문장</div>${rows}</body></html>`;const url=URL.createObjectURL(new Blob(["\ufeff",html],{type:"application/msword"}));const a=document.createElement("a");a.href=url;a.download=`${student?.name||"학생"}_본문오답복습지.doc`;a.click();URL.revokeObjectURL(url)};
- const loadHistory=async()=>{const r=await fetch("/api/student/quiz-results",{cache:"no-store"});if(r.ok){const x=await r.json();setStudent(x.student);setHistory(x)}};
- useEffect(()=>{fetch("/api/student/auth",{cache:"no-store"}).then(async r=>{if(r.ok){const x=await r.json();setStudent(x.student);await loadHistory()}setReady(true)}).catch(()=>setReady(true))},[]);
- useEffect(()=>{if(student?.adminPractice)sessionStorage.setItem("adminQuizWrong",JSON.stringify(adminWrong))},[adminWrong,student?.adminPractice]);
- const login=async(e:FormEvent)=>{e.preventDefault();setLoginError("");if(loginMode==="admin"){const r=await fetch("/api/admin/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:adminPassword})}),x=await r.json().catch(()=>({}));if(!r.ok)return setLoginError(x.error||"관리자 로그인에 실패했습니다.");setStudent({name:"관리자",adminPractice:true});setHistory({daily:[],types:[],recent:[],wrong:[]});try{setAdminWrong(JSON.parse(sessionStorage.getItem("adminQuizWrong")||"[]"))}catch{setAdminWrong([])}return}const r=await fetch("/api/student/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,code})}),x=await r.json().catch(()=>({}));if(!r.ok)return setLoginError(x.error||"로그인하지 못했습니다.");setStudent(x.student);await loadHistory()};
- const check=async()=>{let ok=false;if(type==="translate")ok=sentence.keywords.filter(k=>answer.includes(k)).length>=Math.ceil(sentence.keywords.length*.65);else if(type==="order")ok=normalize(built.join(" "))===normalize(sentence.en);else ok=normalize(answer)===normalize(sentence.en)||chunks(sentence.en).filter(w=>normalize(answer).includes(normalize(w))).length>=Math.ceil(chunks(sentence.en).length*.8);setChecked(true);setSolved(v=>v+1);if(ok)setScore(v=>v+1);if(student?.adminPractice){const key=`${passage}-${type}-${index}`;setAdminWrong((items:any[])=>ok?items.filter(x=>x.key!==key):items.some(x=>x.key===key)?items:[...items,{key,publisher:currentPublisher,grade:currentGrade,lesson:currentLesson,passage:current.title,quizType:type,questionIndex:index+1,passageIndex:passage,sentence}]);return}setSaving(true);await fetch("/api/student/quiz-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({publisher:currentPublisher,grade:currentGrade,lesson:currentLesson,passage:current.title,quizType:type,questionIndex:index+1,correct:ok,answerText:type==="order"?built.join(" "):answer})});setSaving(false);await loadHistory()};
- const isCorrect=type==="translate"?sentence.keywords.filter(k=>answer.includes(k)).length>=Math.ceil(sentence.keywords.length*.65):type==="order"?normalize(built.join(" "))===normalize(sentence.en):normalize(answer)===normalize(sentence.en)||chunks(sentence.en).filter(w=>normalize(answer).includes(normalize(w))).length>=Math.ceil(chunks(sentence.en).length*.8);
- if(!ready)return <main className="quiz-login"><p>본문 퀴즈를 준비하고 있습니다…</p></main>;
- if(!student)return <main className="quiz-login"><form onSubmit={login}><a href="/naesin"><span>M</span><b>벌교미래엔영어 내신관리</b></a><div className="quiz-login-tabs"><button type="button" className={loginMode==="student"?"active":""} onClick={()=>{setLoginMode("student");setLoginError("")}}>학생 로그인</button><button type="button" className={loginMode==="admin"?"active":""} onClick={()=>{setLoginMode("admin");setLoginError("")}}>관리자 로그인</button></div><p>{loginMode==="admin"?"ADMIN QUIZ PRACTICE":"STUDENT QUIZ LOGIN"}</p><h1>{loginMode==="admin"?"관리자 퀴즈 연습":"나의 본문 퀴즈"}</h1><small>{loginMode==="admin"?"관리자 비밀번호로 로그인하여 모든 본문퀴즈를 직접 풀어볼 수 있습니다. 연습 결과는 학생 기록에 저장되지 않습니다.":"등록된 학생 이름과 연락처 뒷번호 4자리로 로그인하세요."}</small>{loginMode==="admin"?<label>관리자 비밀번호<input required type="password" inputMode="numeric" value={adminPassword} onChange={e=>setAdminPassword(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="비밀번호 4자리"/></label>:<><label>학생 이름<input required value={name} onChange={e=>setName(e.target.value)} placeholder="학생 이름"/></label><label>연락처 뒷번호 4자리<input required inputMode="numeric" maxLength={4} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="숫자 4자리"/></label></>}{loginError&&<div>{loginError}</div>}<button disabled={loginMode==="admin"?adminPassword.length!==4:code.length!==4}>{loginMode==="admin"?"관리자로 로그인하고 풀어보기":"로그인하고 퀴즈 풀기"}</button>{loginMode==="admin"&&<a className="quiz-admin-entry" href="/naesin-admin#quiz-results">학생별 퀴즈 현황 보기 →</a>}<a className="quiz-back" href="/naesin">← 내신관리로 돌아가기</a></form></main>;
- return <main className="quiz-page"><header><a href="/naesin"><span>M</span><b>벌교미래엔영어 내신관리</b></a><nav><b>{student.adminPractice?"관리자 연습 모드":`${student.name} 학생`}</b><a href="/naesin">내신관리 홈</a>{!student.adminPractice&&<a href="/study-log">학생 학습기록</a>}<button onClick={async()=>{await fetch(student.adminPractice?"/api/admin/auth":"/api/student/auth",{method:"DELETE"});setStudent(null)}}>로그아웃</button></nav></header>
-  <section className="quiz-hero"><div><p>TEXTBOOK QUIZ LAB</p><h1>교과서 본문을<br/><strong>직접 써서 완성해요.</strong></h1><span>해석·어순·영작을 한 화면에서 반복하며 본문을 정확하게 익힙니다.</span></div><div className="quiz-score"><i style={{background:`conic-gradient(#20b486 ${solved?Math.round(score/solved*100):0}%,#e8eef5 0)`}}><b>{solved?Math.round(score/solved*100):0}%</b></i><span>현재 정답률<small>{score} / {solved}문제</small></span></div></section>
-  <section className="quiz-controls"><label>출판사<select value={currentPublisher} onChange={e=>{const i=quizPassages.findIndex(p=>(p.publisher||"천재교육 · 소영순")===e.target.value);setPassage(i);setIndex(0);setAnswer("");setBuilt([]);setChecked(false)}}>{publishers.map(x=><option key={x}>{x}</option>)}</select></label><label>학년<select value={currentGrade} onChange={e=>{const i=quizPassages.findIndex(p=>(p.publisher||"천재교육 · 소영순")===currentPublisher&&(p.grade||"중학교 2학년")===e.target.value);setPassage(i);setIndex(0);setAnswer("");setBuilt([]);setChecked(false)}}>{grades.map(x=><option key={x}>{x}</option>)}</select></label><label>과·본문 선택<select value={passage} onChange={e=>{setPassage(Number(e.target.value));setIndex(0);setAnswer("");setBuilt([]);setChecked(false)}}>{lessonPassages.map(({p,i})=><option value={i} key={`${p.title}-${i}`}>{p.lesson||"5과"} · {p.title.replace(/본문 \d · /,"")}</option>)}</select></label></section>
-  <section className="quiz-shell"><aside><p>QUIZ TYPE</p>{[["translate","01","해석 쓰기","영문을 보고 우리말로"],["order","02","본문 순서 배열","낱말을 정확한 어순으로"],["write","03","전체 해석 보고 쓰기","우리말을 보고 영어로"]].map(x=><button className={type===x[0]?"active":""} onClick={()=>{setType(x[0] as typeof type);setAnswer("");setBuilt([]);setChecked(false)}} key={x[0]}><i>{x[1]}</i><b>{x[2]}</b><small>{x[3]}</small></button>)}<a className="quiz-blank-link" href="/quiz/full-blank"><i>04</i><b>본문 전체 빈칸</b><small>전체 본문 랜덤 빈칸 채우기</small></a></aside>
-   <article className="quiz-card"><div className="quiz-card-head"><span>{reviewQueue.length?`오답 다시 풀기 ${reviewPosition+1}/${reviewQueue.length}`:current.title}</span><b>{index+1} / {current.sentences.length}</b></div>
-    <div className="prompt"><small>{type==="translate"?"다음 문장을 자연스럽게 해석하세요.":type==="order"?"우리말 해석을 보고 낱말을 눌러 본문 문장을 완성하세요.":"우리말 전체 해석을 보고 영어 문장을 쓰세요."}</small><h2>{type==="translate"?sentence.en:sentence.ko}</h2>{type==="translate"&&<button type="button" className="quiz-audio-button" onClick={()=>speakEnglish(sentence.en)}>🔊 본문 문장 듣기</button>}</div>
-    {type==="order"?<><div className="built-line">{built.length?built.map((w,i)=><button key={`${w}-${i}`} onClick={()=>setBuilt(built.filter((_,n)=>n!==i))}>{w}</button>):<span>아래 낱말을 순서대로 눌러 주세요.</span>}</div><div className="word-bank">{shuffled.map(x=><button disabled={built.filter(w=>w===x.word).length>=shuffled.filter(y=>y.word===x.word).length} onClick={()=>setBuilt([...built,x.word])} key={x.key}>{x.word}</button>)}</div></>:<textarea value={answer} onChange={e=>setAnswer(e.target.value)} placeholder={type==="translate"?"우리말 해석을 입력하세요.":"영어 문장을 입력하세요."}/>} 
-    {checked&&<div className={`quiz-result ${isCorrect?"correct":"retry"}`}><b>{isCorrect?"잘했어요! 핵심 내용을 정확히 썼습니다.":"조금만 더 확인해 보세요."}</b><p><span>모범답안</span>{type==="translate"?sentence.ko:sentence.en}</p></div>}
-    <div className="quiz-actions"><button className="reset" onClick={()=>{setAnswer("");setBuilt([]);setChecked(false)}}>다시 쓰기</button><button className="check" disabled={saving||(type==="order"?!built.length:!answer.trim())} onClick={check}>{student.adminPractice?"정답 확인":"정답 확인 + 기록 저장"}</button><button className="next" onClick={next}>{reviewQueue.length?(reviewPosition+1<reviewQueue.length?"다음 오답 →":"오답 복습 끝내기"):"다음 문제 →"}</button></div>
-   </article>
-  </section>{student.adminPractice?<><section className="quiz-practice-note"><div><b>관리자 연습 모드 · 현재 오답 {wrongItems.length}문장</b><p>관리자 연습 오답은 학생 기록에 저장되지 않고 현재 연습 화면에서만 사용됩니다.</p></div><div className="admin-wrong-actions"><button disabled={!wrongItems.length} onClick={startWrongReview}>오답만 다시 풀기</button><button disabled={!wrongItems.length} onClick={()=>document.querySelector(".wrong-worksheet")?.scrollIntoView({behavior:"smooth"})}>오답 복습지 보기</button><a href="/naesin-admin#quiz-results">학생별 퀴즈 현황 →</a></div></section><section className="wrong-worksheet"><div className="worksheet-toolbar"><div><p>ADMIN PRACTICE WORKSHEET</p><h2>관리자 연습용 본문 오답 복습지</h2><span>이번 관리자 연습에서 틀린 문장만 모았습니다.</span></div><div><button disabled={!wrongItems.length} onClick={copyWorksheet}>{copyNotice||"내용 복사"}</button><button disabled={!wrongItems.length} onClick={downloadWorksheet}>문서 파일 받기</button><button disabled={!wrongItems.length} className="print" onClick={()=>window.print()}>인쇄하기</button></div></div><div className="worksheet-meta"><span>이름: 관리자 연습용</span><span>날짜: ____________</span><span>총 {wrongItems.length}문장</span></div>{wrongItems.length?<div className="worksheet-questions">{wrongItems.map((x:any,i:number)=><article key={x.key}><small>{i+1}. {x.publisher} · {x.grade} {x.lesson} · {x.passage}</small><p>{x.sentence.ko}</p><i/><i/></article>)}</div>:<div className="worksheet-empty"><b>연습 중 틀린 문장이 아직 없습니다.</b><p>문제를 틀리면 이곳에 관리자용 복습지가 자동으로 만들어집니다.</p></div>}<div className="worksheet-answer-key"><h3>정답표</h3>{wrongItems.map((x:any,i:number)=><p key={`admin-answer-${i}`}><b>{i+1}.</b> {x.sentence.en}</p>)}</div></section></>:<>
-   <section className="quiz-history"><div className="history-head"><div><p>MY DAILY QUIZ RECORD</p><h2>{student.name} 학생의 매일 학습기록</h2></div><div className="wrong-quick-actions"><b>현재 오답 {wrongItems.length}문장</b><button disabled={!wrongItems.length} onClick={startWrongReview}>오답만 다시 풀기</button><button disabled={!wrongItems.length} onClick={()=>document.querySelector(".wrong-worksheet")?.scrollIntoView({behavior:"smooth"})}>복습지 보기</button></div></div><div className="history-grid"><article className="daily-chart"><h3>최근 정답률 그래프</h3><div>{[...(history.daily||[])].reverse().map((d:any)=><span key={d.studyDate}><i><b style={{height:`${Math.max(6,Number(d.rate))}%`}}/></i><em>{d.rate}%</em><small>{d.studyDate.slice(5)}</small></span>)}{!history.daily?.length&&<p>첫 문제를 풀면 그래프가 만들어집니다.</p>}</div></article><article className="type-rates"><h3>유형별 정답률</h3>{[["translate","해석 쓰기"],["order","순서 배열"],["write","해석 보고 영작"]].map(([key,label])=>{const x=history.types?.find((v:any)=>v.quizType===key);return <div key={key}><span>{label}</span><i><b style={{width:`${x?.rate||0}%`}}/></i><strong>{x?.rate||0}%</strong></div>})}</article><article className="daily-log"><h3>최근 학습기록</h3>{history.recent?.slice(0,8).map((x:any,i:number)=><p key={`${x.createdAt}-${i}`}><span className={x.correct?"good":"wrong"}>{x.correct?"정답":"오답"}</span><b>{x.passage.replace(/ · .*/,"")} · {x.questionIndex}번</b><small>{x.studyDate}</small></p>)}{!history.recent?.length&&<p>저장된 학습기록이 없습니다.</p>}</article></div></section>
-   <section className="wrong-worksheet"><div className="worksheet-toolbar"><div><p>WRONG ANSWER WORKSHEET</p><h2>{student.name} 학생의 본문 오답 복습지</h2><span>최근 채점에서 틀린 상태인 문장만 자동으로 모았습니다.</span></div><div><button disabled={!wrongItems.length} onClick={copyWorksheet}>{copyNotice||"내용 복사"}</button><button disabled={!wrongItems.length} onClick={downloadWorksheet}>문서 파일 받기</button><button disabled={!wrongItems.length} className="print" onClick={()=>window.print()}>인쇄하기</button></div></div><div className="worksheet-meta"><span>이름: {student.name}</span><span>날짜: ____________</span><span>총 {wrongItems.length}문장</span></div>{wrongItems.length?<div className="worksheet-questions">{wrongItems.map((x:any,i:number)=><article key={`${x.publisher}-${x.passage}-${x.quizType}-${x.questionIndex}`}><small>{i+1}. {x.publisher} · {x.grade} {x.lesson} · {x.passage}</small><p>{x.sentence.ko}</p><i/><i/></article>)}</div>:<div className="worksheet-empty"><b>현재 남아 있는 오답이 없습니다.</b><p>새 문제를 틀리면 이곳에 자동으로 복습지가 만들어집니다.</p></div>}<div className="worksheet-answer-key"><h3>교사용 정답표</h3>{wrongItems.map((x:any,i:number)=><p key={`answer-${i}`}><b>{i+1}.</b> {x.sentence.en}</p>)}</div></section>
-  </>}<BlankWrongReview student={student} passages={quizPassages}/><footer><b>새 교재 추가 방법</b><p>출판사·학년·과별 PDF를 관리자에게 전달하면 같은 형식의 퀴즈 세트로 추가할 수 있습니다.</p></footer>
- </main>
+export default function QuizProgram() {
+  const [type, setType] = useState<"translate" | "order" | "write">(
+      "translate",
+    ),
+    [passage, setPassage] = useState(0),
+    [index, setIndex] = useState(0),
+    [answer, setAnswer] = useState(""),
+    [checked, setChecked] = useState(false),
+    [built, setBuilt] = useState<string[]>([]),
+    [score, setScore] = useState(0),
+    [solved, setSolved] = useState(0),
+    [student, setStudent] = useState<any>(null),
+    [ready, setReady] = useState(false),
+    [name, setName] = useState(""),
+    [code, setCode] = useState(""),
+    [loginMode, setLoginMode] = useState<"student" | "admin">("student"),
+    [adminPassword, setAdminPassword] = useState(""),
+    [loginError, setLoginError] = useState(""),
+    [saving, setSaving] = useState(false),
+    [history, setHistory] = useState<any>({
+      daily: [],
+      types: [],
+      recent: [],
+      wrong: [],
+    }),
+    [adminWrong, setAdminWrong] = useState<any[]>([]),
+    [reviewQueue, setReviewQueue] = useState<any[]>([]),
+    [reviewPosition, setReviewPosition] = useState(0),
+    [copyNotice, setCopyNotice] = useState("");
+  const current = quizPassages[passage],
+    sentence = current.sentences[index];
+  const currentPublisher = current.publisher || "천재교육 · 소영순",
+    currentGrade = current.grade || "중학교 2학년",
+    currentLesson = current.lesson || "5과";
+  const publishers = [
+    ...new Set(quizPassages.map((p) => p.publisher || "천재교육 · 소영순")),
+  ];
+  const grades = [
+    ...new Set(
+      quizPassages
+        .filter(
+          (p) => (p.publisher || "천재교육 · 소영순") === currentPublisher,
+        )
+        .map((p) => p.grade || "중학교 2학년"),
+    ),
+  ];
+  const lessonPassages = quizPassages
+    .map((p, i) => ({ p, i }))
+    .filter(
+      ({ p }) =>
+        (p.publisher || "천재교육 · 소영순") === currentPublisher &&
+        (p.grade || "중학교 2학년") === currentGrade,
+    );
+  const wrongItems = useMemo(
+    () =>
+      student?.adminPractice
+        ? adminWrong
+        : (history.wrong || [])
+            .map((w: any) => {
+              if (!["translate", "order", "write"].includes(w.quizType))
+                return null;
+              const passageIndex = quizPassages.findIndex(
+                (p) =>
+                  (p.publisher || "천재교육 · 소영순") === w.publisher &&
+                  (p.grade || "중학교 2학년") === w.grade &&
+                  (p.lesson || "5과") === w.lesson &&
+                  p.title === w.passage,
+              );
+              if (passageIndex < 0) return null;
+              const sentence =
+                quizPassages[passageIndex].sentences[
+                  Number(w.questionIndex) - 1
+                ];
+              return sentence ? { ...w, passageIndex, sentence } : null;
+            })
+            .filter(Boolean),
+    [history.wrong, adminWrong, student?.adminPractice],
+  );
+  const shuffled = useMemo(
+    () =>
+      chunks(sentence.en)
+        .map((word, i) => ({ word, key: `${word}-${i}` }))
+        .sort((a, b) => normalize(a.key).localeCompare(normalize(b.key))),
+    [sentence.en],
+  );
+  const openWrong = (item: any) => {
+    setPassage(item.passageIndex);
+    setIndex(Number(item.questionIndex) - 1);
+    setType(item.quizType);
+    setAnswer("");
+    setBuilt([]);
+    setChecked(false);
+  };
+  const startWrongReview = () => {
+    if (!wrongItems.length) return;
+    setReviewQueue(wrongItems);
+    setReviewPosition(0);
+    openWrong(wrongItems[0]);
+  };
+  const next = () => {
+    if (reviewQueue.length) {
+      const nextPosition = reviewPosition + 1;
+      if (nextPosition < reviewQueue.length) {
+        setReviewPosition(nextPosition);
+        openWrong(reviewQueue[nextPosition]);
+      } else {
+        setReviewQueue([]);
+        setReviewPosition(0);
+        setIndex((index + 1) % current.sentences.length);
+        setAnswer("");
+        setBuilt([]);
+        setChecked(false);
+      }
+      return;
+    }
+    setIndex((index + 1) % current.sentences.length);
+    setAnswer("");
+    setBuilt([]);
+    setChecked(false);
+  };
+  const worksheetText = () =>
+    wrongItems
+      .map(
+        (x: any, i: number) =>
+          `${i + 1}. [${x.grade} ${x.lesson} · ${x.passage}]\n${x.sentence.ko}\n영어 문장: ________________________________________________\n____________________________________________________________`,
+      )
+      .join("\n\n");
+  const printCurrentQuestion = () => {
+    const typeLabel =
+      type === "translate"
+        ? "해석 쓰기"
+        : type === "order"
+          ? "본문 순서 배열"
+          : "전체 해석 보고 쓰기";
+    const prompt = type === "translate" ? sentence.en : sentence.ko;
+    const popup = window.open("", "_blank", "width=900,height=720");
+    if (!popup) return window.print();
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 문제</title><style>@page{size:A4;margin:18mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px}.meta{color:#66758a;font-size:12px;margin-bottom:34px}.question{padding:25px;border:1px solid #cfd7e3;border-radius:12px}.question b{display:block;margin-bottom:14px;color:#1764c0}.question p{font-size:18px;line-height:1.8}.line{height:38px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · ${current.title}<br>이름: ____________ 날짜: ____________</div><section class="question"><b>${index + 1}번 문제</b><p>${prompt}</p><div class="line"></div><div class="line"></div><div class="line"></div></section></body></html>`);
+    popup.document.close();
+    popup.focus();
+    window.setTimeout(() => { popup.print(); popup.close(); }, 300);
+  };
+  const copyWorksheet = async () => {
+    await navigator.clipboard.writeText(
+      `${student?.name || "학생"} 본문 오답 복습지\n\n${worksheetText()}`,
+    );
+    setCopyNotice("복사 완료");
+    setTimeout(() => setCopyNotice(""), 1800);
+  };
+  const downloadWorksheet = () => {
+    const rows = wrongItems
+      .map(
+        (x: any, i: number) =>
+          `<div class="question"><b>${i + 1}. ${x.grade} ${x.lesson} · ${x.passage}</b><p>${x.sentence.ko}</p><div class="line"></div><div class="line"></div></div>`,
+      )
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:'Malgun Gothic',sans-serif;padding:36px;color:#111}h1{font-size:24px}.meta{margin-bottom:28px}.question{page-break-inside:avoid;margin:0 0 28px}.question b{font-size:12px;color:#345}.question p{font-size:15px}.line{height:28px;border-bottom:1px solid #777}</style></head><body><h1>${student?.name || "학생"} 본문 오답 복습지</h1><div class="meta">이름: ____________ 날짜: ____________ · 총 ${wrongItems.length}문장</div>${rows}</body></html>`;
+    const url = URL.createObjectURL(
+      new Blob(["\ufeff", html], { type: "application/msword" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${student?.name || "학생"}_본문오답복습지.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const loadHistory = async () => {
+    const r = await fetch("/api/student/quiz-results", { cache: "no-store" });
+    if (r.ok) {
+      const x = await r.json();
+      setStudent(x.student);
+      setHistory(x);
+    }
+  };
+  useEffect(() => {
+    fetch("/api/student/auth", { cache: "no-store" })
+      .then(async (r) => {
+        if (r.ok) {
+          const x = await r.json();
+          setStudent(x.student);
+          await loadHistory();
+        }
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+  }, []);
+  useEffect(() => {
+    if (student?.adminPractice)
+      sessionStorage.setItem("adminQuizWrong", JSON.stringify(adminWrong));
+  }, [adminWrong, student?.adminPractice]);
+  const login = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    if (loginMode === "admin") {
+      const r = await fetch("/api/admin/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: adminPassword }),
+        }),
+        x = await r.json().catch(() => ({}));
+      if (!r.ok)
+        return setLoginError(x.error || "관리자 로그인에 실패했습니다.");
+      setStudent({ name: "관리자", adminPractice: true });
+      setHistory({ daily: [], types: [], recent: [], wrong: [] });
+      try {
+        setAdminWrong(
+          JSON.parse(sessionStorage.getItem("adminQuizWrong") || "[]"),
+        );
+      } catch {
+        setAdminWrong([]);
+      }
+      return;
+    }
+    const r = await fetch("/api/student/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, code }),
+      }),
+      x = await r.json().catch(() => ({}));
+    if (!r.ok) return setLoginError(x.error || "로그인하지 못했습니다.");
+    setStudent(x.student);
+    await loadHistory();
+  };
+  const check = async () => {
+    let ok = false;
+    if (type === "translate")
+      ok =
+        sentence.keywords.filter((k) => answer.includes(k)).length >=
+        Math.ceil(sentence.keywords.length * 0.65);
+    else if (type === "order")
+      ok = normalize(built.join(" ")) === normalize(sentence.en);
+    else
+      ok =
+        normalize(answer) === normalize(sentence.en) ||
+        chunks(sentence.en).filter((w) =>
+          normalize(answer).includes(normalize(w)),
+        ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
+    setChecked(true);
+    setSolved((v) => v + 1);
+    if (ok) setScore((v) => v + 1);
+    if (student?.adminPractice) {
+      const key = `${passage}-${type}-${index}`;
+      setAdminWrong((items: any[]) =>
+        ok
+          ? items.filter((x) => x.key !== key)
+          : items.some((x) => x.key === key)
+            ? items
+            : [
+                ...items,
+                {
+                  key,
+                  publisher: currentPublisher,
+                  grade: currentGrade,
+                  lesson: currentLesson,
+                  passage: current.title,
+                  quizType: type,
+                  questionIndex: index + 1,
+                  passageIndex: passage,
+                  sentence,
+                },
+              ],
+      );
+      return;
+    }
+    setSaving(true);
+    await fetch("/api/student/quiz-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publisher: currentPublisher,
+        grade: currentGrade,
+        lesson: currentLesson,
+        passage: current.title,
+        quizType: type,
+        questionIndex: index + 1,
+        correct: ok,
+        answerText: type === "order" ? built.join(" ") : answer,
+      }),
+    });
+    setSaving(false);
+    await loadHistory();
+  };
+  const isCorrect =
+    type === "translate"
+      ? sentence.keywords.filter((k) => answer.includes(k)).length >=
+        Math.ceil(sentence.keywords.length * 0.65)
+      : type === "order"
+        ? normalize(built.join(" ")) === normalize(sentence.en)
+        : normalize(answer) === normalize(sentence.en) ||
+          chunks(sentence.en).filter((w) =>
+            normalize(answer).includes(normalize(w)),
+          ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
+  if (!ready)
+    return (
+      <main className="quiz-login">
+        <p>본문 퀴즈를 준비하고 있습니다…</p>
+      </main>
+    );
+  if (!student)
+    return (
+      <main className="quiz-login">
+        <form onSubmit={login}>
+          <a href="/naesin">
+            <span>M</span>
+            <b>벌교미래엔영어 내신관리</b>
+          </a>
+          <div className="quiz-login-tabs">
+            <button
+              type="button"
+              className={loginMode === "student" ? "active" : ""}
+              onClick={() => {
+                setLoginMode("student");
+                setLoginError("");
+              }}
+            >
+              학생 로그인
+            </button>
+            <button
+              type="button"
+              className={loginMode === "admin" ? "active" : ""}
+              onClick={() => {
+                setLoginMode("admin");
+                setLoginError("");
+              }}
+            >
+              관리자 로그인
+            </button>
+          </div>
+          <p>
+            {loginMode === "admin"
+              ? "ADMIN QUIZ PRACTICE"
+              : "STUDENT QUIZ LOGIN"}
+          </p>
+          <h1>
+            {loginMode === "admin" ? "관리자 퀴즈 연습" : "나의 본문 퀴즈"}
+          </h1>
+          <small>
+            {loginMode === "admin"
+              ? "관리자 비밀번호로 로그인하여 모든 본문퀴즈를 직접 풀어볼 수 있습니다. 연습 결과는 학생 기록에 저장되지 않습니다."
+              : "등록된 학생 이름과 연락처 뒷번호 4자리로 로그인하세요."}
+          </small>
+          {loginMode === "admin" ? (
+            <label>
+              관리자 비밀번호
+              <input
+                required
+                type="password"
+                inputMode="numeric"
+                value={adminPassword}
+                onChange={(e) =>
+                  setAdminPassword(
+                    e.target.value.replace(/\D/g, "").slice(0, 4),
+                  )
+                }
+                placeholder="비밀번호 4자리"
+              />
+            </label>
+          ) : (
+            <>
+              <label>
+                학생 이름
+                <input
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="학생 이름"
+                />
+              </label>
+              <label>
+                연락처 뒷번호 4자리
+                <input
+                  required
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={code}
+                  onChange={(e) =>
+                    setCode(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  placeholder="숫자 4자리"
+                />
+              </label>
+            </>
+          )}
+          {loginError && <div>{loginError}</div>}
+          <button
+            disabled={
+              loginMode === "admin"
+                ? adminPassword.length !== 4
+                : code.length !== 4
+            }
+          >
+            {loginMode === "admin"
+              ? "관리자로 로그인하고 풀어보기"
+              : "로그인하고 퀴즈 풀기"}
+          </button>
+          {loginMode === "admin" && (
+            <a className="quiz-admin-entry" href="/naesin-admin#quiz-results">
+              학생별 퀴즈 현황 보기 →
+            </a>
+          )}
+          <a className="quiz-back" href="/naesin">
+            ← 내신관리로 돌아가기
+          </a>
+        </form>
+      </main>
+    );
+  return (
+    <main className="quiz-page">
+      <header>
+        <a href="/naesin">
+          <span>M</span>
+          <b>벌교미래엔영어 내신관리</b>
+        </a>
+        <nav>
+          <b>
+            {student.adminPractice
+              ? "관리자 연습 모드"
+              : `${student.name} 학생`}
+          </b>
+          <a href="/naesin">내신관리 홈</a>
+          {!student.adminPractice && <a href="/study-log">학생 학습기록</a>}
+          <button
+            onClick={async () => {
+              await fetch(
+                student.adminPractice ? "/api/admin/auth" : "/api/student/auth",
+                { method: "DELETE" },
+              );
+              setStudent(null);
+            }}
+          >
+            로그아웃
+          </button>
+        </nav>
+      </header>
+      <section className="quiz-hero">
+        <div>
+          <p>TEXTBOOK QUIZ LAB</p>
+          <h1>
+            교과서 본문을
+            <br />
+            <strong>직접 써서 완성해요.</strong>
+          </h1>
+          <span>
+            해석·어순·영작을 한 화면에서 반복하며 본문을 정확하게 익힙니다.
+          </span>
+        </div>
+        <div className="quiz-score">
+          <i
+            style={{
+              background: `conic-gradient(#20b486 ${solved ? Math.round((score / solved) * 100) : 0}%,#e8eef5 0)`,
+            }}
+          >
+            <b>{solved ? Math.round((score / solved) * 100) : 0}%</b>
+          </i>
+          <span>
+            현재 정답률
+            <small>
+              {score} / {solved}문제
+            </small>
+          </span>
+        </div>
+      </section>
+      <section className="quiz-controls">
+        <label>
+          출판사
+          <select
+            value={currentPublisher}
+            onChange={(e) => {
+              const i = quizPassages.findIndex(
+                (p) => (p.publisher || "천재교육 · 소영순") === e.target.value,
+              );
+              setPassage(i);
+              setIndex(0);
+              setAnswer("");
+              setBuilt([]);
+              setChecked(false);
+            }}
+          >
+            {publishers.map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          학년
+          <select
+            value={currentGrade}
+            onChange={(e) => {
+              const i = quizPassages.findIndex(
+                (p) =>
+                  (p.publisher || "천재교육 · 소영순") === currentPublisher &&
+                  (p.grade || "중학교 2학년") === e.target.value,
+              );
+              setPassage(i);
+              setIndex(0);
+              setAnswer("");
+              setBuilt([]);
+              setChecked(false);
+            }}
+          >
+            {grades.map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          과·본문 선택
+          <select
+            value={passage}
+            onChange={(e) => {
+              setPassage(Number(e.target.value));
+              setIndex(0);
+              setAnswer("");
+              setBuilt([]);
+              setChecked(false);
+            }}
+          >
+            {lessonPassages.map(({ p, i }) => (
+              <option value={i} key={`${p.title}-${i}`}>
+                {p.lesson || "5과"} · {p.title.replace(/본문 \d · /, "")}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+      <section className="quiz-shell">
+        <aside>
+          <p>QUIZ TYPE</p>
+          {[
+            ["translate", "01", "해석 쓰기", "영문을 보고 우리말로"],
+            ["order", "02", "본문 순서 배열", "낱말을 정확한 어순으로"],
+            ["write", "03", "전체 해석 보고 쓰기", "우리말을 보고 영어로"],
+          ].map((x) => (
+            <button
+              className={type === x[0] ? "active" : ""}
+              onClick={() => {
+                setType(x[0] as typeof type);
+                setAnswer("");
+                setBuilt([]);
+                setChecked(false);
+              }}
+              key={x[0]}
+            >
+              <i>{x[1]}</i>
+              <b>{x[2]}</b>
+              <small>{x[3]}</small>
+            </button>
+          ))}
+          <a className="quiz-blank-link" href="/quiz/full-blank">
+            <i>04</i>
+            <b>본문 전체 빈칸</b>
+            <small>전체 본문 랜덤 빈칸 채우기</small>
+          </a>
+        </aside>
+        <article className="quiz-card">
+          <div className="quiz-card-head">
+            <span>
+              {reviewQueue.length
+                ? `오답 다시 풀기 ${reviewPosition + 1}/${reviewQueue.length}`
+                : current.title}
+            </span>
+            <b>
+              {index + 1} / {current.sentences.length}
+            </b>
+          </div>
+          <div className="prompt">
+            <small>
+              {type === "translate"
+                ? "다음 문장을 자연스럽게 해석하세요."
+                : type === "order"
+                  ? "우리말 해석을 보고 낱말을 눌러 본문 문장을 완성하세요."
+                  : "우리말 전체 해석을 보고 영어 문장을 쓰세요."}
+            </small>
+            <h2>{type === "translate" ? sentence.en : sentence.ko}</h2>
+            {type === "translate" && (
+              <button
+                type="button"
+                className="quiz-audio-button"
+                onClick={() => speakEnglish(sentence.en)}
+              >
+                🔊 본문 문장 듣기
+              </button>
+            )}
+          </div>
+          {type === "order" ? (
+            <>
+              <div className="built-line">
+                {built.length ? (
+                  built.map((w, i) => (
+                    <button
+                      key={`${w}-${i}`}
+                      onClick={() => setBuilt(built.filter((_, n) => n !== i))}
+                    >
+                      {w}
+                    </button>
+                  ))
+                ) : (
+                  <span>아래 낱말을 순서대로 눌러 주세요.</span>
+                )}
+              </div>
+              <div className="word-bank">
+                {shuffled.map((x) => (
+                  <button
+                    disabled={
+                      built.filter((w) => w === x.word).length >=
+                      shuffled.filter((y) => y.word === x.word).length
+                    }
+                    onClick={() => setBuilt([...built, x.word])}
+                    key={x.key}
+                  >
+                    {x.word}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder={
+                type === "translate"
+                  ? "우리말 해석을 입력하세요."
+                  : "영어 문장을 입력하세요."
+              }
+            />
+          )}
+          {checked && (
+            <div className={`quiz-result ${isCorrect ? "correct" : "retry"}`}>
+              <b>
+                {isCorrect
+                  ? "잘했어요! 핵심 내용을 정확히 썼습니다."
+                  : "조금만 더 확인해 보세요."}
+              </b>
+              <p>
+                <span>모범답안</span>
+                {type === "translate" ? sentence.ko : sentence.en}
+              </p>
+            </div>
+          )}
+          <div className="quiz-actions">
+            <button className="print-question" onClick={printCurrentQuestion}>
+              현재 문제 인쇄
+            </button>
+            <button
+              className="reset"
+              onClick={() => {
+                setAnswer("");
+                setBuilt([]);
+                setChecked(false);
+              }}
+            >
+              다시 쓰기
+            </button>
+            <button
+              className="check"
+              disabled={
+                saving || (type === "order" ? !built.length : !answer.trim())
+              }
+              onClick={check}
+            >
+              {student.adminPractice ? "정답 확인" : "정답 확인 + 기록 저장"}
+            </button>
+            <button className="next" onClick={next}>
+              {reviewQueue.length
+                ? reviewPosition + 1 < reviewQueue.length
+                  ? "다음 오답 →"
+                  : "오답 복습 끝내기"
+                : "다음 문제 →"}
+            </button>
+          </div>
+        </article>
+      </section>
+      {student.adminPractice ? (
+        <>
+          <section className="quiz-practice-note">
+            <div>
+              <b>관리자 연습 모드 · 현재 오답 {wrongItems.length}문장</b>
+              <p>
+                관리자 연습 오답은 학생 기록에 저장되지 않고 현재 연습
+                화면에서만 사용됩니다.
+              </p>
+            </div>
+            <div className="admin-wrong-actions">
+              <button disabled={!wrongItems.length} onClick={startWrongReview}>
+                오답만 다시 풀기
+              </button>
+              <button
+                disabled={!wrongItems.length}
+                onClick={() =>
+                  document
+                    .querySelector(".wrong-worksheet")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                오답 복습지 보기
+              </button>
+              <a href="/naesin-admin#quiz-results">학생별 퀴즈 현황 →</a>
+            </div>
+          </section>
+          <section className="wrong-worksheet">
+            <div className="worksheet-toolbar">
+              <div>
+                <p>ADMIN PRACTICE WORKSHEET</p>
+                <h2>관리자 연습용 본문 오답 복습지</h2>
+                <span>이번 관리자 연습에서 틀린 문장만 모았습니다.</span>
+              </div>
+              <div>
+                <button disabled={!wrongItems.length} onClick={copyWorksheet}>
+                  {copyNotice || "내용 복사"}
+                </button>
+                <button
+                  disabled={!wrongItems.length}
+                  onClick={downloadWorksheet}
+                >
+                  문서 파일 받기
+                </button>
+                <button
+                  disabled={!wrongItems.length}
+                  className="print"
+                  onClick={() => window.print()}
+                >
+                  인쇄하기
+                </button>
+              </div>
+            </div>
+            <div className="worksheet-meta">
+              <span>이름: 관리자 연습용</span>
+              <span>날짜: ____________</span>
+              <span>총 {wrongItems.length}문장</span>
+            </div>
+            {wrongItems.length ? (
+              <div className="worksheet-questions">
+                {wrongItems.map((x: any, i: number) => (
+                  <article key={x.key}>
+                    <small>
+                      {i + 1}. {x.publisher} · {x.grade} {x.lesson} ·{" "}
+                      {x.passage}
+                    </small>
+                    <p>{x.sentence.ko}</p>
+                    <i />
+                    <i />
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="worksheet-empty">
+                <b>연습 중 틀린 문장이 아직 없습니다.</b>
+                <p>
+                  문제를 틀리면 이곳에 관리자용 복습지가 자동으로 만들어집니다.
+                </p>
+              </div>
+            )}
+            <div className="worksheet-answer-key">
+              <h3>정답표</h3>
+              {wrongItems.map((x: any, i: number) => (
+                <p key={`admin-answer-${i}`}>
+                  <b>{i + 1}.</b> {x.sentence.en}
+                </p>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          <section className="quiz-history">
+            <div className="history-head">
+              <div>
+                <p>MY DAILY QUIZ RECORD</p>
+                <h2>{student.name} 학생의 매일 학습기록</h2>
+              </div>
+              <div className="wrong-quick-actions">
+                <b>현재 오답 {wrongItems.length}문장</b>
+                <button
+                  disabled={!wrongItems.length}
+                  onClick={startWrongReview}
+                >
+                  오답만 다시 풀기
+                </button>
+                <button
+                  disabled={!wrongItems.length}
+                  onClick={() =>
+                    document
+                      .querySelector(".wrong-worksheet")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  복습지 보기
+                </button>
+              </div>
+            </div>
+            <div className="history-grid">
+              <article className="daily-chart">
+                <h3>최근 정답률 그래프</h3>
+                <div>
+                  {[...(history.daily || [])].reverse().map((d: any) => (
+                    <span key={d.studyDate}>
+                      <i>
+                        <b
+                          style={{ height: `${Math.max(6, Number(d.rate))}%` }}
+                        />
+                      </i>
+                      <em>{d.rate}%</em>
+                      <small>{d.studyDate.slice(5)}</small>
+                    </span>
+                  ))}
+                  {!history.daily?.length && (
+                    <p>첫 문제를 풀면 그래프가 만들어집니다.</p>
+                  )}
+                </div>
+              </article>
+              <article className="type-rates">
+                <h3>유형별 정답률</h3>
+                {[
+                  ["translate", "해석 쓰기"],
+                  ["order", "순서 배열"],
+                  ["write", "해석 보고 영작"],
+                ].map(([key, label]) => {
+                  const x = history.types?.find((v: any) => v.quizType === key);
+                  return (
+                    <div key={key}>
+                      <span>{label}</span>
+                      <i>
+                        <b style={{ width: `${x?.rate || 0}%` }} />
+                      </i>
+                      <strong>{x?.rate || 0}%</strong>
+                    </div>
+                  );
+                })}
+              </article>
+              <article className="daily-log">
+                <h3>최근 학습기록</h3>
+                {history.recent?.slice(0, 8).map((x: any, i: number) => (
+                  <p key={`${x.createdAt}-${i}`}>
+                    <span className={x.correct ? "good" : "wrong"}>
+                      {x.correct ? "정답" : "오답"}
+                    </span>
+                    <b>
+                      {x.passage.replace(/ · .*/, "")} · {x.questionIndex}번
+                    </b>
+                    <small>{x.studyDate}</small>
+                  </p>
+                ))}
+                {!history.recent?.length && <p>저장된 학습기록이 없습니다.</p>}
+              </article>
+            </div>
+          </section>
+          <section className="wrong-worksheet">
+            <div className="worksheet-toolbar">
+              <div>
+                <p>WRONG ANSWER WORKSHEET</p>
+                <h2>{student.name} 학생의 본문 오답 복습지</h2>
+                <span>
+                  최근 채점에서 틀린 상태인 문장만 자동으로 모았습니다.
+                </span>
+              </div>
+              <div>
+                <button disabled={!wrongItems.length} onClick={copyWorksheet}>
+                  {copyNotice || "내용 복사"}
+                </button>
+                <button
+                  disabled={!wrongItems.length}
+                  onClick={downloadWorksheet}
+                >
+                  문서 파일 받기
+                </button>
+                <button
+                  disabled={!wrongItems.length}
+                  className="print"
+                  onClick={() => window.print()}
+                >
+                  인쇄하기
+                </button>
+              </div>
+            </div>
+            <div className="worksheet-meta">
+              <span>이름: {student.name}</span>
+              <span>날짜: ____________</span>
+              <span>총 {wrongItems.length}문장</span>
+            </div>
+            {wrongItems.length ? (
+              <div className="worksheet-questions">
+                {wrongItems.map((x: any, i: number) => (
+                  <article
+                    key={`${x.publisher}-${x.passage}-${x.quizType}-${x.questionIndex}`}
+                  >
+                    <small>
+                      {i + 1}. {x.publisher} · {x.grade} {x.lesson} ·{" "}
+                      {x.passage}
+                    </small>
+                    <p>{x.sentence.ko}</p>
+                    <i />
+                    <i />
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="worksheet-empty">
+                <b>현재 남아 있는 오답이 없습니다.</b>
+                <p>새 문제를 틀리면 이곳에 자동으로 복습지가 만들어집니다.</p>
+              </div>
+            )}
+            <div className="worksheet-answer-key">
+              <h3>교사용 정답표</h3>
+              {wrongItems.map((x: any, i: number) => (
+                <p key={`answer-${i}`}>
+                  <b>{i + 1}.</b> {x.sentence.en}
+                </p>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+      <BlankWrongReview student={student} passages={quizPassages} />
+      <footer>
+        <b>새 교재 추가 방법</b>
+        <p>
+          출판사·학년·과별 PDF를 관리자에게 전달하면 같은 형식의 퀴즈 세트로
+          추가할 수 있습니다.
+        </p>
+      </footer>
+    </main>
+  );
 }

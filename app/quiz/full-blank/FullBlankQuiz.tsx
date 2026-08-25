@@ -26,7 +26,8 @@ export default function FullBlankQuiz() {
     [checked, setChecked] = useState(false),
     [saving, setSaving] = useState(false),
     [score, setScore] = useState(0),
-    [solved, setSolved] = useState(0);
+    [solved, setSolved] = useState(0),
+    [progressReady,setProgressReady]=useState(false);
   const current = quizPassages[passage],
     publisher = current.publisher || "천재교육 · 소영순",
     grade = current.grade || "중학교 2학년",
@@ -110,6 +111,8 @@ export default function FullBlankQuiz() {
         setReady(true);
       });
   }, []);
+  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-blank-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setPassage(saved.passage);setRound(saved.round||1);setAnswers(saved.answers||{});setChecked(Boolean(saved.checked));setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-blank-progress-${student.id||student.name}`,JSON.stringify({passage,round,answers,checked,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,passage,round,answers,checked,score,solved]);
   const login = async (e: FormEvent) => {
     e.preventDefault();
     setError("");

@@ -255,7 +255,8 @@ export default function QuizProgram() {
     [adminWrong, setAdminWrong] = useState<any[]>([]),
     [reviewQueue, setReviewQueue] = useState<any[]>([]),
     [reviewPosition, setReviewPosition] = useState(0),
-    [copyNotice, setCopyNotice] = useState("");
+    [copyNotice, setCopyNotice] = useState(""),
+    [progressReady,setProgressReady]=useState(false);
   const current = quizPassages[passage],
     sentence = current.sentences[index];
   const currentPublisher = current.publisher || "천재교육 · 소영순",
@@ -309,6 +310,8 @@ export default function QuizProgram() {
     () => wrongItems.filter((item: any) => item.quizType === type),
     [wrongItems, type],
   );
+  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,score,solved]);
   const shuffled = useMemo(
     () =>
       chunks(sentence.en)

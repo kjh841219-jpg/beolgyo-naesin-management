@@ -21,6 +21,7 @@ const similarityScore = (spoken: string, target: string) => {
       );
   return Math.max(0, Math.round((1 - rows[a.length][b.length] / Math.max(a.length, b.length)) * 100));
 };
+const pronunciationScoreFor=(spoken:string,target:string)=>{const spokenWords=spoken.toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[],targetWords=target.toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[];if(targetWords.length<2)return similarityScore(spoken,target);if(!spokenWords.length)return 0;const aligned=targetWords.map((word,i)=>similarityScore(spokenWords[i]||"",word));const wordScore=aligned.reduce((a,b)=>a+b,0)/targetWords.length;const countPenalty=Math.max(0,100-Math.abs(spokenWords.length-targetWords.length)*25);return Math.round(wordScore*.65+similarityScore(spoken,target)*.25+countPenalty*.1)};
 
 export default function WordQuizProgram() {
   const [student, setStudent] = useState<any>(null),
@@ -44,6 +45,7 @@ export default function WordQuizProgram() {
     [spokenText, setSpokenText] = useState(""),
     [pronunciationScore, setPronunciationScore] = useState<number | null>(null),
     [speechNotice, setSpeechNotice] = useState("");
+  const [progressReady,setProgressReady]=useState(false);
   const current = wordSets[setIndex],
     item = current.words[queue[position] ?? 0];
   const publishers = [...new Set(wordSets.map((x) => x.publisher))],
@@ -85,6 +87,8 @@ export default function WordQuizProgram() {
       })
       .catch(() => setReady(true));
   }, []);
+  useEffect(()=>{if(!student)return;const key=`beolgyo-word-progress-${student.id||student.name}`;try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&wordSets[saved.setIndex]){setSetIndex(saved.setIndex);setMode(saved.mode||"study");setQueue(Array.isArray(saved.queue)&&saved.queue.length?saved.queue:wordSets[saved.setIndex].words.map((_:unknown,i:number)=>i));setPosition(Math.min(saved.position||0,wordSets[saved.setIndex].words.length-1));setAnswer(saved.answer||"");setChecked(Boolean(saved.checked));setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady||!queue.length)return;localStorage.setItem(`beolgyo-word-progress-${student.id||student.name}`,JSON.stringify({setIndex,mode,queue,position,answer,checked,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,setIndex,mode,queue,position,answer,checked,score,solved]);
   const login = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -260,9 +264,9 @@ export default function WordQuizProgram() {
     recognition.onstart = () => setRecording(true);
     recognition.onresult = (event: any) => {
       const alternatives = Array.from(event.results[0] || []).map((x: any) => x.transcript || "");
-      const best = alternatives.sort((a: string, b: string) => similarityScore(b, item.word) - similarityScore(a, item.word))[0] || "";
+      const best = alternatives.sort((a: string, b: string) => pronunciationScoreFor(b, item.word) - pronunciationScoreFor(a, item.word))[0] || "";
       setSpokenText(best);
-      setPronunciationScore(similarityScore(best, item.word));
+      setPronunciationScore(pronunciationScoreFor(best, item.word));
       setSpeechNotice("");
     };
     recognition.onerror = (event: any) => {

@@ -358,22 +358,36 @@ export default function QuizProgram() {
           `${i + 1}. [${x.grade} ${x.lesson} · ${x.passage}]\n${x.sentence.ko}\n영어 문장: ________________________________________________\n____________________________________________________________`,
       )
       .join("\n\n");
-  const printCurrentPassage = () => {
+  const printCurrentPassage = (
+    printType: "translate" | "order" | "write" = type,
+  ) => {
     const typeLabel =
-      type === "translate"
+      printType === "translate"
         ? "해석 쓰기"
-        : type === "order"
+        : printType === "order"
           ? "본문 순서 배열"
           : "전체 해석 보고 쓰기";
-    const rows = current.sentences
-      .map(
-        (row, i) =>
-          `<article><b>${i + 1}번</b><p>${type === "translate" ? row.en : row.ko}</p><div class="line"></div><div class="line"></div>${type === "translate" ? "" : '<div class="line"></div>'}</article>`,
-      )
+    const lessonPassages = quizPassages.filter(
+      (item) =>
+        (item.publisher || "천재교육 · 소영순") === currentPublisher &&
+        (item.grade || "중학교 2학년") === currentGrade &&
+        (item.lesson || "5과") === currentLesson,
+    );
+    let sentenceNumber = 0;
+    const rows = lessonPassages
+      .map((passageItem) => {
+        const questions = passageItem.sentences
+          .map((row) => {
+            sentenceNumber += 1;
+            return `<article><b>${sentenceNumber}번</b><p>${printType === "translate" ? row.en : row.ko}</p><div class="line"></div><div class="line"></div>${printType === "translate" ? "" : '<div class="line"></div>'}</article>`;
+          })
+          .join("");
+        return `<section><h2>${passageItem.title}</h2>${questions}</section>`;
+      })
       .join("");
     const popup = window.open("", "_blank", "width=900,height=720");
     if (!popup) return window.print();
-    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 전체 본문 문제지</title><style>@page{size:A4;margin:13mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px;margin-bottom:6px}.meta{color:#66758a;font-size:12px;margin-bottom:24px}article{padding:15px 0;border-bottom:1px solid #cfd7e3;page-break-inside:avoid}article b{display:block;margin-bottom:8px;color:#1764c0;font-size:12px}article p{font-size:16px;line-height:1.7;margin:0 0 5px}.line{height:29px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · ${current.title} · 총 ${current.sentences.length}문장<br>이름: ____________ 날짜: ____________ 점수: ________</div>${rows}</body></html>`);
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 전체 본문 문제지</title><style>@page{size:A4;margin:13mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px;margin-bottom:6px}h2{font-size:15px;color:#1764c0;margin:26px 0 4px;padding:8px 10px;background:#eef5ff;border-left:4px solid #1764c0}.meta{color:#66758a;font-size:12px;margin-bottom:24px}section{break-inside:auto}article{padding:15px 0;border-bottom:1px solid #cfd7e3;page-break-inside:avoid}article b{display:block;margin-bottom:8px;color:#1764c0;font-size:12px}article p{font-size:16px;line-height:1.7;margin:0 0 5px}.line{height:29px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · 해당 과 전체 본문 · 총 ${sentenceNumber}문장<br>이름: ____________ 날짜: ____________ 점수: ________</div>${rows}</body></html>`);
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
@@ -896,8 +910,8 @@ export default function QuizProgram() {
             </div>
           )}
           <div className="quiz-actions">
-            <button className="print-question" onClick={printCurrentPassage}>
-              전체 지문 인쇄
+            <button className="print-question" onClick={() => printCurrentPassage(type)}>
+              현재 영역 전체 본문 인쇄
             </button>
             <button
               className="print-wrong-question"

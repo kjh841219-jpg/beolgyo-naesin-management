@@ -4,8 +4,23 @@ import { wordSets } from "./wordQuizData";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 
 type Mode = "study" | "meaning" | "mixed";
+type PrintMode = "meaning" | "spelling" | "mixed";
 const clean = (s: string) => s.toLowerCase().replace(/[~·,./()\s-]/g, "");
 const mix = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
+const similarityScore = (spoken: string, target: string) => {
+  const a = clean(spoken), b = clean(target);
+  if (!a || !b) return 0;
+  const rows = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) rows[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      rows[i][j] = Math.min(
+        rows[i - 1][j] + 1,
+        rows[i][j - 1] + 1,
+        rows[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+  return Math.max(0, Math.round((1 - rows[a.length][b.length] / Math.max(a.length, b.length)) * 100));
+};
 
 export default function WordQuizProgram() {
   const [student, setStudent] = useState<any>(null),
@@ -23,7 +38,12 @@ export default function WordQuizProgram() {
     [checked, setChecked] = useState(false),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
-    [saving, setSaving] = useState(false);
+    [saving, setSaving] = useState(false),
+    [printMode, setPrintMode] = useState<PrintMode>("meaning"),
+    [recording, setRecording] = useState(false),
+    [spokenText, setSpokenText] = useState(""),
+    [pronunciationScore, setPronunciationScore] = useState<number | null>(null),
+    [speechNotice, setSpeechNotice] = useState("");
   const current = wordSets[setIndex],
     item = current.words[queue[position] ?? 0];
   const publishers = [...new Set(wordSets.map((x) => x.publisher))],
@@ -127,6 +147,9 @@ export default function WordQuizProgram() {
     setPosition((v) => (v + 1) % queue.length);
     setAnswer("");
     setChecked(false);
+    setSpokenText("");
+    setPronunciationScore(null);
+    setSpeechNotice("");
   };
   const chooseSet = (i: number) => {
     setSetIndex(i);
@@ -147,6 +170,54 @@ export default function WordQuizProgram() {
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
+  };
+  const printAllWords = () => {
+    const label =
+      printMode === "meaning"
+        ? "단어 뜻쓰기"
+        : printMode === "spelling"
+          ? "뜻 보고 영단어 쓰기"
+          : "단어·뜻 혼합";
+    const rows = current.words
+      .map((word, i) => {
+        const spelling = printMode === "spelling" || (printMode === "mixed" && i % 2 === 1);
+        return `<article><b>${i + 1}.</b><span>${spelling ? word.meaning : word.word}</span><i></i></article>`;
+      })
+      .join("");
+    const popup = window.open("", "_blank", "width=1000,height=760");
+    if (!popup) return window.print();
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${label} 전체 문제지</title><style>@page{size:A4;margin:12mm}body{font-family:'Malgun Gothic',sans-serif;color:#152b42}h1{font-size:22px;margin-bottom:6px}.meta{color:#66758a;margin-bottom:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}article{min-height:54px;padding:9px 0;display:grid;grid-template-columns:30px 1fr;align-items:start;border-bottom:1px solid #c8d1da;page-break-inside:avoid}article b{color:#147a63}article span{font-size:14px}article i{grid-column:2;height:20px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 · ${label} 전체 문제지</h1><div class="meta">${current.publisher} · ${current.grade} · ${current.lesson} · 총 ${current.words.length}문제<br>이름: ____________ 날짜: ____________ 점수: ________</div><section class="grid">${rows}</section></body></html>`);
+    popup.document.close();
+    popup.focus();
+    window.setTimeout(() => { popup.print(); popup.close(); }, 300);
+  };
+  const startPronunciation = () => {
+    const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!Recognition) {
+      setSpeechNotice("이 기기에서는 음성 발음 평가를 지원하지 않습니다. 크롬 또는 엣지에서 이용해 주세요.");
+      return;
+    }
+    stopEnglishSpeech();
+    setSpeechNotice("마이크에 단어를 한 번 또렷하게 말해 주세요.");
+    setSpokenText("");
+    setPronunciationScore(null);
+    const recognition = new Recognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+    recognition.onstart = () => setRecording(true);
+    recognition.onresult = (event: any) => {
+      const alternatives = Array.from(event.results[0] || []).map((x: any) => x.transcript || "");
+      const best = alternatives.sort((a: string, b: string) => similarityScore(b, item.word) - similarityScore(a, item.word))[0] || "";
+      setSpokenText(best);
+      setPronunciationScore(similarityScore(best, item.word));
+      setSpeechNotice("");
+    };
+    recognition.onerror = (event: any) => {
+      setSpeechNotice(event.error === "not-allowed" ? "마이크 사용을 허용한 뒤 다시 눌러 주세요." : "발음을 인식하지 못했습니다. 조용한 곳에서 다시 말해 주세요.");
+    };
+    recognition.onend = () => setRecording(false);
+    recognition.start();
   };
   if (!ready)
     return (
@@ -327,6 +398,11 @@ export default function WordQuizProgram() {
           </select>
         </label>
       </section>
+      <section className="wq-print-all">
+        <div><p>PRINTABLE WORD TEST</p><h2>전체 단어 문제지 만들기</h2><span>현재 선택한 과의 모든 단어를 원하는 문제 유형으로 출력합니다.</span></div>
+        <label>문제 유형<select value={printMode} onChange={(e) => setPrintMode(e.target.value as PrintMode)}><option value="meaning">영단어 보고 뜻쓰기</option><option value="spelling">뜻 보고 영단어 쓰기</option><option value="mixed">단어·뜻 혼합</option></select></label>
+        <button onClick={printAllWords}>전체 {current.words.length}문제 인쇄</button>
+      </section>
       <section className="wq-shell">
         <aside>
           <p>LEARNING MODE</p>
@@ -370,6 +446,11 @@ export default function WordQuizProgram() {
               <button className="wq-again" onClick={() => speak()}>
                 발음 다시 듣기
               </button>
+              <div className="wq-pronunciation">
+                <button className={recording ? "recording" : ""} disabled={recording} onClick={startPronunciation}>{recording ? "● 듣는 중…" : "🎙 발음 녹음하고 점수 보기"}</button>
+                {speechNotice && <p>{speechNotice}</p>}
+                {pronunciationScore !== null && <div><b>{pronunciationScore}점</b><span>인식된 발음: {spokenText || "-"}</span><em>{pronunciationScore >= 90 ? "아주 정확해요!" : pronunciationScore >= 70 ? "좋아요. 한 번 더 또렷하게 연습해 보세요." : "음원을 다시 듣고 천천히 따라 해 보세요."}</em></div>}
+              </div>
             </div>
           ) : (
             <>

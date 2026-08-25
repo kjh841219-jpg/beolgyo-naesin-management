@@ -72,3 +72,8 @@
   color: #28588f;
   background: #f4f8fd;
 }
+.quiz-actions .print-wrong-question {
+  border: 1px solid #edc7b3;
+  color: #ae552a;
+  background: #fff7f2;
+}

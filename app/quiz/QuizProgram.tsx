@@ -305,6 +305,10 @@ export default function QuizProgram() {
             .filter(Boolean),
     [history.wrong, adminWrong, student?.adminPractice],
   );
+  const currentTypeWrongItems = useMemo(
+    () => wrongItems.filter((item: any) => item.quizType === type),
+    [wrongItems, type],
+  );
   const shuffled = useMemo(
     () =>
       chunks(sentence.en)
@@ -365,6 +369,26 @@ export default function QuizProgram() {
     const popup = window.open("", "_blank", "width=900,height=720");
     if (!popup) return window.print();
     popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 문제</title><style>@page{size:A4;margin:18mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px}.meta{color:#66758a;font-size:12px;margin-bottom:34px}.question{padding:25px;border:1px solid #cfd7e3;border-radius:12px}.question b{display:block;margin-bottom:14px;color:#1764c0}.question p{font-size:18px;line-height:1.8}.line{height:38px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · ${current.title}<br>이름: ____________ 날짜: ____________</div><section class="question"><b>${index + 1}번 문제</b><p>${prompt}</p><div class="line"></div><div class="line"></div><div class="line"></div></section></body></html>`);
+    popup.document.close();
+    popup.focus();
+    window.setTimeout(() => { popup.print(); popup.close(); }, 300);
+  };
+  const printCurrentTypeWrong = () => {
+    const typeLabel =
+      type === "translate"
+        ? "해석 쓰기"
+        : type === "order"
+          ? "본문 순서 배열"
+          : "전체 해석 보고 쓰기";
+    const rows = currentTypeWrongItems
+      .map(
+        (item: any, i: number) =>
+          `<article><small>${i + 1}. ${item.publisher} · ${item.grade} ${item.lesson} · ${item.passage}</small><p>${type === "translate" ? item.sentence.en : item.sentence.ko}</p><div class="line"></div><div class="line"></div></article>`,
+      )
+      .join("");
+    const popup = window.open("", "_blank", "width=950,height=740");
+    if (!popup) return window.print();
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 오답 문제지</title><style>@page{size:A4;margin:15mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px}.meta{margin-bottom:24px;color:#66758a}article{padding:16px 0;border-bottom:1px solid #ccd5df;page-break-inside:avoid}small{display:block;color:#66758a}p{font-size:17px;line-height:1.7}.line{height:34px;border-bottom:1px solid #777}</style></head><body><h1>${student?.name || "학생"} · ${typeLabel} 틀린 문장 복습지</h1><div class="meta">이름: ____________ 날짜: ____________ · 총 ${currentTypeWrongItems.length}문장</div>${rows}</body></html>`);
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
@@ -869,6 +893,13 @@ export default function QuizProgram() {
           <div className="quiz-actions">
             <button className="print-question" onClick={printCurrentQuestion}>
               현재 문제 인쇄
+            </button>
+            <button
+              className="print-wrong-question"
+              disabled={!currentTypeWrongItems.length}
+              onClick={printCurrentTypeWrong}
+            >
+              틀린 문장만 인쇄
             </button>
             <button
               className="reset"

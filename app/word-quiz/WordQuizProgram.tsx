@@ -1,6 +1,7 @@
 "use client";
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {wordSets} from "./wordQuizData";
+import {speakEnglish,stopEnglishSpeech} from "../lib/speakEnglish";
 
 type Mode="study"|"meaning"|"mixed";
 const clean=(s:string)=>s.toLowerCase().replace(/[~·,./()\s-]/g,"");
@@ -15,10 +16,10 @@ export default function WordQuizProgram(){
  const reset=(nextMode:Mode=mode,nextSet=setIndex)=>{setMode(nextMode);setQueue(mix(wordSets[nextSet].words.map((_,i)=>i)));setPosition(0);setAnswer("");setChecked(false);setScore(0);setSolved(0)};
  useEffect(()=>{setQueue(mix(wordSets[0].words.map((_,i)=>i)));fetch("/api/student/auth",{cache:"no-store"}).then(async r=>{if(r.ok){const x=await r.json();setStudent(x.student)}setReady(true)}).catch(()=>setReady(true))},[]);
  const login=async(e:FormEvent)=>{e.preventDefault();setError("");if(loginMode==="admin"){const r=await fetch("/api/admin/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})}),x=await r.json().catch(()=>({}));if(!r.ok)return setError(x.error||"관리자 로그인에 실패했습니다.");setStudent({name:"관리자",adminPractice:true});return}const r=await fetch("/api/student/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,code})}),x=await r.json().catch(()=>({}));if(!r.ok)return setError(x.error||"로그인하지 못했습니다.");setStudent(x.student)};
- const speak=(word=item.word)=>{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(word);u.lang="en-US";u.rate=.78;window.speechSynthesis.speak(u)};
+ const speak=(word=item.word)=>speakEnglish(word);
  const correct=direction==="meaning"?item.meaning.split(/[,;/]| 또는 |, |\//).some(x=>clean(answer).includes(clean(x))||clean(x).includes(clean(answer))):clean(answer)===clean(item.word);
  const grade=async()=>{if(checked||!answer.trim())return;setChecked(true);setSolved(v=>v+1);if(correct)setScore(v=>v+1);if(student.adminPractice)return;setSaving(true);await fetch("/api/student/quiz-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({publisher:current.publisher,grade:current.grade,lesson:current.lesson,passage:`단어 테스트 · ${current.lesson}`,quizType:mode==="meaning"?"word-meaning":"word-mixed",questionIndex:(queue[position]??0)+1,correct,answerText:answer})});setSaving(false)};
- const next=()=>{setPosition(v=>(v+1)%queue.length);setAnswer("");setChecked(false)};
+ const next=()=>{stopEnglishSpeech();setPosition(v=>(v+1)%queue.length);setAnswer("");setChecked(false)};
  const chooseSet=(i:number)=>{setSetIndex(i);reset(mode,i)};
  if(!ready)return <main className="wq-login"><p>단어 학습을 준비하고 있습니다…</p></main>;
  if(!student)return <main className="wq-login"><form onSubmit={login}><a href="/naesin"><span>M</span><b>벌교미래엔영어 내신관리</b></a><div className="wq-tabs"><button type="button" className={loginMode==="student"?"active":""} onClick={()=>setLoginMode("student")}>학생 로그인</button><button type="button" className={loginMode==="admin"?"active":""} onClick={()=>setLoginMode("admin")}>관리자 로그인</button></div><p>VOCABULARY QUIZ LOGIN</p><h1>나의 단어 퀴즈</h1><small>음원을 듣고 단어를 공부한 뒤 뜻쓰기와 혼합 테스트에 도전하세요.</small>{loginMode==="admin"?<label>관리자 비밀번호<input required type="password" inputMode="numeric" maxLength={4} value={password} onChange={e=>setPassword(e.target.value.replace(/\D/g,"").slice(0,4))}/></label>:<><label>학생 이름<input required value={name} onChange={e=>setName(e.target.value)}/></label><label>연락처 뒷번호 4자리<input required inputMode="numeric" maxLength={4} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,4))}/></label></>}{error&&<div className="wq-error">{error}</div>}<button className="wq-login-button">로그인하고 학습하기</button><a className="wq-back" href="/naesin">← 내신관리로 돌아가기</a></form></main>;

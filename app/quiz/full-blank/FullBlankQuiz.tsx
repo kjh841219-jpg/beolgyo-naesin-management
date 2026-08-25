@@ -27,7 +27,8 @@ export default function FullBlankQuiz() {
     [saving, setSaving] = useState(false),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
-    [progressReady,setProgressReady]=useState(false);
+    [progressReady,setProgressReady]=useState(false),
+    [completionNotice,setCompletionNotice]=useState("");
   const current = quizPassages[passage],
     publisher = current.publisher || "천재교육 · 소영순",
     grade = current.grade || "중학교 2학년",
@@ -174,6 +175,7 @@ export default function FullBlankQuiz() {
     );
     setSaving(false);
   };
+  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"blank",solved,score,detail:`${publisher} ${grade} ${lesson} · ${current.title}`})}),d=await r.json().catch(()=>({}));setCompletionNotice(d.message||d.error||"완료 처리했습니다.")};
   const next = () => {
     setRound((v) => v + 1);
     setAnswers({});
@@ -454,6 +456,7 @@ export default function FullBlankQuiz() {
           </div>
         )}
         <div className="fb-actions">
+          {student?.id&&<button className="fb-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
           <button className="fb-print" onClick={() => printRows(false)}>
             빈칸 문제 인쇄
           </button>
@@ -484,6 +487,7 @@ export default function FullBlankQuiz() {
           </button>
           <button onClick={next}>새 랜덤 빈칸 →</button>
         </div>
+        {completionNotice&&<p className="fb-completion-notice">{completionNotice}</p>}
       </section>
     </main>
   );

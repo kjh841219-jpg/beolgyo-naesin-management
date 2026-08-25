@@ -45,6 +45,7 @@ export default function WordQuizProgram() {
     [spokenText, setSpokenText] = useState(""),
     [pronunciationScore, setPronunciationScore] = useState<number | null>(null),
     [speechNotice, setSpeechNotice] = useState("");
+  const [completionNotice,setCompletionNotice]=useState("");
   const [progressReady,setProgressReady]=useState(false);
   const current = wordSets[setIndex],
     item = current.words[queue[position] ?? 0];
@@ -156,6 +157,7 @@ export default function WordQuizProgram() {
     setPronunciationScore(null);
     setSpeechNotice("");
   };
+  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"word",solved,score,detail:`${current.publisher} ${current.grade} ${current.lesson} · ${mode}`})}),d=await r.json().catch(()=>({}));setCompletionNotice(d.message||d.error||"완료 처리했습니다.")};
   const chooseSet = (i: number) => {
     setSetIndex(i);
     reset(mode, i);
@@ -551,6 +553,7 @@ export default function WordQuizProgram() {
             </>
           )}
           <div className="wq-actions">
+            {student?.id&&<button className="wq-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
             <button className="wq-print" onClick={printCurrentWord}>
               현재 문제 인쇄
             </button>
@@ -564,6 +567,7 @@ export default function WordQuizProgram() {
             )}
             <button onClick={next}>다음 단어 →</button>
           </div>
+          {completionNotice&&<p className="wq-completion-notice">{completionNotice}</p>}
           <small className="wq-source">자료: {current.source}</small>
         </article>
       </section>

@@ -256,7 +256,8 @@ export default function QuizProgram() {
     [reviewQueue, setReviewQueue] = useState<any[]>([]),
     [reviewPosition, setReviewPosition] = useState(0),
     [copyNotice, setCopyNotice] = useState(""),
-    [progressReady,setProgressReady]=useState(false);
+    [progressReady,setProgressReady]=useState(false),
+    [completionNotice,setCompletionNotice]=useState("");
   const current = quizPassages[passage],
     sentence = current.sentences[index];
   const currentPublisher = current.publisher || "천재교육 · 소영순",
@@ -355,6 +356,7 @@ export default function QuizProgram() {
     setBuilt([]);
     setChecked(false);
   };
+  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"passage",solved,score,detail:`${currentPublisher} ${currentGrade} ${currentLesson} · ${type}`})}),d=await r.json().catch(()=>({}));setCompletionNotice(d.message||d.error||"완료 처리했습니다.")};
   const worksheetText = () =>
     wrongItems
       .map(
@@ -924,6 +926,7 @@ export default function QuizProgram() {
             </div>
           )}
           <div className="quiz-actions">
+            {student?.id&&<button className="quiz-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
             <button className="print-question" onClick={() => printCurrentPassage(type)}>
               현재 영역 전체 본문 인쇄
             </button>
@@ -961,6 +964,7 @@ export default function QuizProgram() {
                 : "다음 문제 →"}
             </button>
           </div>
+          {completionNotice&&<p className="quiz-completion-notice">{completionNotice}</p>}
         </article>
       </section>
       {student.adminPractice ? (

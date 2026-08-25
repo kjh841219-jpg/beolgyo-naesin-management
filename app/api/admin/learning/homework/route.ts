@@ -1,4 +1,4 @@
-import { database, ensureLearningSchema, requireAdmin } from "../_shared";
+import { database, ensureLearningSchema, homeworkFeedback, requireAdmin } from "../_shared";
 
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
@@ -14,5 +14,5 @@ export async function GET() {
     ORDER BY h.id DESC
     LIMIT 100
   `).all();
-  return Response.json({ items: results ?? [] });
+  return Response.json({ items: (results ?? []).map((x:any)=>({...x,autoFeedback:homeworkFeedback(x.studentName,x.title,x.completedItems,x.studentNote)})) });
 }

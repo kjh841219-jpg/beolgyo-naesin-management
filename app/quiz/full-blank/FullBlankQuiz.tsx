@@ -92,8 +92,13 @@ export default function FullBlankQuiz() {
       .then(async ([studentResponse, adminResponse]) => {
         if (studentResponse.ok) {
           const x = await studentResponse.json();
-          setStudent(x.student);
-        } else if (adminResponse.ok && (await adminResponse.json()).authenticated) {
+          if (x.authenticated && x.student) {
+            setStudent(x.student);
+            setReady(true);
+            return;
+          }
+        }
+        if (adminResponse.ok && (await adminResponse.json()).authenticated) {
           setStudent({ name: "관리자", adminPractice: true });
         } else {
           setStudent({ name: "학습자", guestPractice: true });

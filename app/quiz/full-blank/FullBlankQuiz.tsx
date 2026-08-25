@@ -96,12 +96,14 @@ export default function FullBlankQuiz() {
         } else if (adminResponse.ok && (await adminResponse.json()).authenticated) {
           setStudent({ name: "관리자", adminPractice: true });
         } else {
-          window.location.replace("/quiz");
-          return;
+          setStudent({ name: "학습자", guestPractice: true });
         }
         setReady(true);
       })
-      .catch(() => window.location.replace("/quiz"));
+      .catch(() => {
+        setStudent({ name: "학습자", guestPractice: true });
+        setReady(true);
+      });
   }, []);
   const login = async (e: FormEvent) => {
     e.preventDefault();
@@ -136,7 +138,7 @@ export default function FullBlankQuiz() {
     setChecked(true);
     setSolved((v) => v + 1);
     if (allCorrect) setScore((v) => v + 1);
-    if (student.adminPractice) return;
+    if (student.adminPractice || student.guestPractice) return;
     setSaving(true);
     await Promise.all(
       blanks.map((row, si) => {
@@ -286,16 +288,21 @@ export default function FullBlankQuiz() {
         </a>
         <nav>
           <b>
-            {student.adminPractice ? "관리자 연습" : `${student.name} 학생`}
+            {student.adminPractice
+              ? "관리자 연습"
+              : student.guestPractice
+                ? "바로 학습 모드"
+                : `${student.name} 학생`}
           </b>
           <a href="/word-quiz">단어 퀴즈</a>
           <a href="/naesin">내신관리 홈</a>
           <button
             onClick={async () => {
-              await fetch(
-                student.adminPractice ? "/api/admin/auth" : "/api/student/auth",
-                { method: "DELETE" },
-              );
+              if (!student.guestPractice)
+                await fetch(
+                  student.adminPractice ? "/api/admin/auth" : "/api/student/auth",
+                  { method: "DELETE" },
+                );
               window.location.href = "/quiz";
             }}
           >
@@ -462,7 +469,9 @@ export default function FullBlankQuiz() {
             }
             onClick={check}
           >
-            {student.adminPractice ? "정답 확인" : "채점하고 기록 저장"}
+            {student.adminPractice || student.guestPractice
+              ? "정답 확인"
+              : "채점하고 기록 저장"}
           </button>
           <button onClick={next}>새 랜덤 빈칸 →</button>
         </div>

@@ -2,16 +2,18 @@
 
 let activeUtterance:SpeechSynthesisUtterance|null=null;
 let keepAlive:number|undefined;
+let activeAudio:HTMLAudioElement|null=null;
 
 export function stopEnglishSpeech(){
- if(typeof window==="undefined"||!("speechSynthesis" in window))return;
+ if(typeof window==="undefined")return;
+ if(activeAudio){activeAudio.pause();activeAudio.removeAttribute("src");activeAudio.load();activeAudio=null}
  if(keepAlive)window.clearInterval(keepAlive);
  keepAlive=undefined;
- window.speechSynthesis.cancel();
+ if("speechSynthesis" in window)window.speechSynthesis.cancel();
  activeUtterance=null;
 }
 
-export function speakEnglish(text:string){
+function speakWithDeviceVoice(text:string){
  if(typeof window==="undefined"||!("speechSynthesis" in window)||typeof SpeechSynthesisUtterance==="undefined")return false;
  const synth=window.speechSynthesis;
  if(keepAlive)window.clearInterval(keepAlive);
@@ -32,5 +34,19 @@ export function speakEnglish(text:string){
  synth.speak(utterance);
  // Mobile browsers sometimes pause long speech while the screen is active.
  keepAlive=window.setInterval(()=>{if(synth.paused)synth.resume();if(!synth.speaking&&!synth.pending)cleanup()},1200);
+ return true;
+}
+
+export function speakEnglish(text:string){
+ if(typeof window==="undefined")return false;
+ stopEnglishSpeech();
+ const audio=new Audio(`/api/tts?text=${encodeURIComponent(text.replace(/\s+/g," ").trim())}`);
+ audio.preload="auto";
+ audio.volume=1;
+ activeAudio=audio;
+ audio.onended=()=>{activeAudio=null};
+ audio.onerror=()=>{activeAudio=null;speakWithDeviceVoice(text)};
+ const play=audio.play();
+ if(play)play.catch(()=>{activeAudio=null;speakWithDeviceVoice(text)});
  return true;
 }

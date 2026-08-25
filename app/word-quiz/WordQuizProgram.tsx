@@ -191,16 +191,68 @@ export default function WordQuizProgram() {
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
   };
-  const startPronunciation = () => {
+  const startPronunciation = async () => {
     const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!Recognition) {
-      setSpeechNotice("이 기기에서는 음성 발음 평가를 지원하지 않습니다. 크롬 또는 엣지에서 이용해 주세요.");
-      return;
-    }
     stopEnglishSpeech();
-    setSpeechNotice("마이크에 단어를 한 번 또렷하게 말해 주세요.");
     setSpokenText("");
     setPronunciationScore(null);
+    const recordFallback = async () => {
+      if (!navigator.mediaDevices?.getUserMedia || !(window as any).MediaRecorder) {
+        setRecording(false);
+        setSpeechNotice("이 브라우저에서는 마이크 녹음을 지원하지 않습니다. 휴대폰 크롬이나 엣지에서 열어 주세요.");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const context = AudioContextClass ? new AudioContextClass() : null;
+        const analyser = context?.createAnalyser();
+        if (analyser) {
+          analyser.fftSize = 512;
+          context.createMediaStreamSource(stream).connect(analyser);
+        }
+        const levels: number[] = [];
+        const timer = window.setInterval(() => {
+          if (!analyser) return;
+          const data = new Uint8Array(analyser.fftSize);
+          analyser.getByteTimeDomainData(data);
+          levels.push(data.reduce((sum, value) => sum + Math.abs(value - 128), 0) / data.length / 128);
+        }, 80);
+        const recorder = new (window as any).MediaRecorder(stream);
+        setRecording(true);
+        setSpeechNotice("녹음 중입니다. 표시된 단어를 한 번 또렷하게 말해 주세요.");
+        recorder.onstop = async () => {
+          window.clearInterval(timer);
+          stream.getTracks().forEach((track) => track.stop());
+          await context?.close().catch(() => undefined);
+          const voiced = levels.filter((level) => level > 0.025).length;
+          const ratio = levels.length ? voiced / levels.length : 0;
+          const average = levels.length ? levels.reduce((a, b) => a + b, 0) / levels.length : 0;
+          const practiceScore = ratio < 0.08 ? 20 : Math.min(96, Math.round(48 + ratio * 38 + Math.min(10, average * 160)));
+          setRecording(false);
+          setSpokenText("음성 녹음 완료");
+          setPronunciationScore(practiceScore);
+          setSpeechNotice("이 기기는 자동 받아쓰기를 지원하지 않아 녹음 음량과 발화 길이로 연습 점수를 계산했습니다.");
+        };
+        recorder.start();
+        window.setTimeout(() => recorder.state === "recording" && recorder.stop(), 2600);
+      } catch (error: any) {
+        setRecording(false);
+        setSpeechNotice(error?.name === "NotAllowedError" ? "마이크 사용을 허용한 뒤 다시 눌러 주세요." : "마이크를 시작하지 못했습니다. 브라우저의 마이크 권한을 확인해 주세요.");
+      }
+    };
+    if (!Recognition) {
+      await recordFallback();
+      return;
+    }
+    try {
+      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      permissionStream.getTracks().forEach((track) => track.stop());
+    } catch {
+      setSpeechNotice("마이크 사용을 허용한 뒤 다시 눌러 주세요.");
+      return;
+    }
+    setSpeechNotice("마이크에 단어를 한 번 또렷하게 말해 주세요.");
     const recognition = new Recognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
@@ -214,7 +266,13 @@ export default function WordQuizProgram() {
       setSpeechNotice("");
     };
     recognition.onerror = (event: any) => {
-      setSpeechNotice(event.error === "not-allowed" ? "마이크 사용을 허용한 뒤 다시 눌러 주세요." : "발음을 인식하지 못했습니다. 조용한 곳에서 다시 말해 주세요.");
+      if (event.error === "not-allowed") {
+        setSpeechNotice("마이크 사용을 허용한 뒤 다시 눌러 주세요.");
+      } else {
+        setRecording(false);
+        setSpeechNotice("자동 음성인식을 사용할 수 없어 녹음 평가로 전환합니다.");
+        window.setTimeout(recordFallback, 200);
+      }
     };
     recognition.onend = () => setRecording(false);
     recognition.start();

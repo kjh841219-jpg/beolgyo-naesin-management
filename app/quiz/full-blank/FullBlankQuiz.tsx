@@ -95,10 +95,13 @@ export default function FullBlankQuiz() {
           setStudent(x.student);
         } else if (adminResponse.ok && (await adminResponse.json()).authenticated) {
           setStudent({ name: "관리자", adminPractice: true });
+        } else {
+          window.location.replace("/quiz");
+          return;
         }
         setReady(true);
       })
-      .catch(() => setReady(true));
+      .catch(() => window.location.replace("/quiz"));
   }, []);
   const login = async (e: FormEvent) => {
     e.preventDefault();
@@ -293,7 +296,7 @@ export default function FullBlankQuiz() {
                 student.adminPractice ? "/api/admin/auth" : "/api/student/auth",
                 { method: "DELETE" },
               );
-              setStudent(null);
+              window.location.href = "/quiz";
             }}
           >
             로그아웃

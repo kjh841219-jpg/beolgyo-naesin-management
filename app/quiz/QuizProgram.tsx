@@ -379,7 +379,17 @@ export default function QuizProgram() {
         const questions = passageItem.sentences
           .map((row) => {
             sentenceNumber += 1;
-            return `<article><b>${sentenceNumber}번</b><p>${printType === "translate" ? row.en : row.ko}</p><div class="line"></div><div class="line"></div>${printType === "translate" ? "" : '<div class="line"></div>'}</article>`;
+            const words = row.en.match(/[A-Za-z]+(?:['’][A-Za-z]+)?|[^\sA-Za-z]+/g) || [];
+            const mixedWords = [...words]
+              .sort((a, b) => ((a.length * 17 + sentenceNumber * 11) % 23) - ((b.length * 17 + sentenceNumber * 7) % 23))
+              .join(" / ");
+            const prompt =
+              printType === "translate"
+                ? `<p>${row.en}</p>`
+                : printType === "order"
+                  ? `<p class="ko">${row.ko}</p><p class="words">${mixedWords}</p>`
+                  : `<p>${row.ko}</p>`;
+            return `<article><b>${sentenceNumber}번</b>${prompt}<div class="line"></div><div class="line"></div>${printType === "translate" ? "" : '<div class="line"></div>'}</article>`;
           })
           .join("");
         return `<section><h2>${passageItem.title}</h2>${questions}</section>`;
@@ -387,7 +397,7 @@ export default function QuizProgram() {
       .join("");
     const popup = window.open("", "_blank", "width=900,height=720");
     if (!popup) return window.print();
-    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 전체 본문 문제지</title><style>@page{size:A4;margin:13mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px;margin-bottom:6px}h2{font-size:15px;color:#1764c0;margin:26px 0 4px;padding:8px 10px;background:#eef5ff;border-left:4px solid #1764c0}.meta{color:#66758a;font-size:12px;margin-bottom:24px}section{break-inside:auto}article{padding:15px 0;border-bottom:1px solid #cfd7e3;page-break-inside:avoid}article b{display:block;margin-bottom:8px;color:#1764c0;font-size:12px}article p{font-size:16px;line-height:1.7;margin:0 0 5px}.line{height:29px;border-bottom:1px solid #777}</style></head><body><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">${currentPublisher} · ${currentGrade} · ${currentLesson} · 해당 과 전체 본문 · 총 ${sentenceNumber}문장<br>이름: ____________ 날짜: ____________ 점수: ________</div>${rows}</body></html>`);
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 전체 본문 문제지</title><style>@page{size:A4;margin:13mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}.brand{text-align:center;font-weight:800;color:#1764c0;border-bottom:2px solid #1764c0;padding:7px;margin-bottom:16px}.footer{text-align:center;font-weight:800;color:#1764c0;border-top:2px solid #1764c0;padding:12px;margin-top:24px}h1{font-size:22px;margin-bottom:6px}h2{font-size:15px;color:#1764c0;margin:26px 0 4px;padding:8px 10px;background:#eef5ff;border-left:4px solid #1764c0}.meta{color:#66758a;font-size:12px;margin-bottom:24px}section{break-inside:auto}article{padding:15px 0;border-bottom:1px solid #cfd7e3;page-break-inside:avoid}article b{display:block;margin-bottom:8px;color:#1764c0;font-size:12px}article p{font-size:16px;line-height:1.7;margin:0 0 5px}.words{font-family:Arial,sans-serif;background:#f4f6fa;padding:9px;font-size:14px}.ko{font-weight:600}.line{height:29px;border-bottom:1px solid #777}</style></head><body><div class="brand">보성벌교내신은 벌교미래엔영어</div><h1>벌교미래엔영어 본문퀴즈 · ${typeLabel}</h1><div class="meta">출판사: ${currentPublisher} · 학년: ${currentGrade} · 과: ${currentLesson} · 해당 과 전체 본문 · 총 ${sentenceNumber}문장<br>이름: ____________ 날짜: ____________ 점수: ________</div>${rows}<div class="footer">보성벌교내신은 벌교미래엔영어 · ${currentPublisher} · ${currentGrade}</div></body></html>`);
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);
@@ -402,12 +412,12 @@ export default function QuizProgram() {
     const rows = currentTypeWrongItems
       .map(
         (item: any, i: number) =>
-          `<article><small>${i + 1}. ${item.publisher} · ${item.grade} ${item.lesson} · ${item.passage}</small><p>${type === "translate" ? item.sentence.en : item.sentence.ko}</p><div class="line"></div><div class="line"></div></article>`,
+          `<article><small>${i + 1}. ${item.publisher} · ${item.grade} ${item.lesson} · ${item.passage}</small><p>${type === "translate" ? item.sentence.en : item.sentence.ko}</p>${type === "order" ? `<p class="words">${(item.sentence.en.match(/[A-Za-z]+(?:['’][A-Za-z]+)?|[^\sA-Za-z]+/g) || []).reverse().join(" / ")}</p>` : ""}<div class="line"></div><div class="line"></div></article>`,
       )
       .join("");
     const popup = window.open("", "_blank", "width=950,height=740");
     if (!popup) return window.print();
-    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 오답 문제지</title><style>@page{size:A4;margin:15mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}h1{font-size:22px}.meta{margin-bottom:24px;color:#66758a}article{padding:16px 0;border-bottom:1px solid #ccd5df;page-break-inside:avoid}small{display:block;color:#66758a}p{font-size:17px;line-height:1.7}.line{height:34px;border-bottom:1px solid #777}</style></head><body><h1>${student?.name || "학생"} · ${typeLabel} 틀린 문장 복습지</h1><div class="meta">이름: ____________ 날짜: ____________ · 총 ${currentTypeWrongItems.length}문장</div>${rows}</body></html>`);
+    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${typeLabel} 오답 문제지</title><style>@page{size:A4;margin:15mm}body{font-family:'Malgun Gothic',sans-serif;color:#17233b}.brand,.footer{text-align:center;font-weight:800;color:#1764c0;padding:9px;border-bottom:2px solid #1764c0}.footer{border:0;border-top:2px solid #1764c0;margin-top:22px}h1{font-size:22px}.meta{margin-bottom:24px;color:#66758a}article{padding:16px 0;border-bottom:1px solid #ccd5df;page-break-inside:avoid}small{display:block;color:#66758a}p{font-size:17px;line-height:1.7}.words{font-family:Arial,sans-serif;background:#f4f6fa;padding:8px;font-size:14px}.line{height:34px;border-bottom:1px solid #777}</style></head><body><div class="brand">보성벌교내신은 벌교미래엔영어</div><h1>${student?.name || "학생"} · ${typeLabel} 틀린 문장 복습지</h1><div class="meta">출판사: ${currentPublisher} · 학년: ${currentGrade} · 과: ${currentLesson}<br>이름: ____________ 날짜: ____________ · 총 ${currentTypeWrongItems.length}문장</div>${rows}<div class="footer">보성벌교내신은 벌교미래엔영어</div></body></html>`);
     popup.document.close();
     popup.focus();
     window.setTimeout(() => { popup.print(); popup.close(); }, 300);

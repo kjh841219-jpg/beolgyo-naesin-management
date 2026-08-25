@@ -8,3 +8,16 @@
 .admin-entry a.manual-home{margin-top:9px;border:1px solid #ffffff30;color:#fff;background:transparent}
 .staff-login .login-choice form>p{margin:0 0 7px;color:var(--green);font-size:10px;font-weight:900;letter-spacing:0}
 @media(max-width:700px){.login-choice{grid-template-columns:1fr}.admin-entry a{margin-top:24px}}
+.daily-report-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.daily-report-actions button{min-height:42px;padding:0 15px;border:1px solid #c8d6d0;border-radius:9px;color:#17334b;background:#fff;font-size:10px;font-weight:900;cursor:pointer}
+.daily-report-actions .print-daily{border-color:var(--green);color:#fff;background:var(--green)}
+@media(max-width:700px){.daily-report-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.daily-report-actions input{grid-column:1/-1;width:100%;box-sizing:border-box}.daily-report-actions button{width:100%}}
+@media print{
+ @page{size:A4 landscape;margin:10mm}
+ .staff-app{display:block;background:#fff}.staff-app>aside,.daily-report-actions,.detail-toggle,.detail-box>button{display:none!important}
+ .staff-work{padding:0}.staff-work>header{margin-bottom:14px}.staff-work>header:after{content:"선택 날짜의 일일 업무 체크 및 작성 기록";color:#607069;font-size:10px}
+ .staff-overview{margin:0 0 12px;grid-template-columns:1.7fr repeat(3,1fr)}.staff-overview article{padding:10px;box-shadow:none}
+ .rate-ring{width:64px;height:64px}.rate-ring:after{width:48px;height:48px}
+ .check-groups{grid-template-columns:1fr 1fr;gap:8px}.check-groups>section{padding:10px;break-inside:avoid;box-shadow:none}
+ .check-groups article{padding:8px 0}.check-button{print-color-adjust:exact;-webkit-print-color-adjust:exact}.detail-box{display:grid!important;grid-template-columns:repeat(3,1fr);gap:8px;background:#fff}.detail-box textarea{min-height:55px;border:1px solid #aebbb5}
+}

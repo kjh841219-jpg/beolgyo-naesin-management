@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { wordSets } from "./wordQuizData";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
+import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
@@ -157,7 +158,7 @@ export default function WordQuizProgram() {
     setPronunciationScore(null);
     setSpeechNotice("");
   };
-  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"word",solved,score,detail:`${current.publisher} ${current.grade} ${current.lesson} · ${mode}`})}),d=await r.json().catch(()=>({}));setCompletionNotice(d.message||d.error||"완료 처리했습니다.")};
+  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"word",solved,score,detail:`${current.publisher} ${current.grade} ${current.lesson} · ${mode}`})}),d=await r.json().catch(()=>({}));if(!r.ok)return setCompletionNotice(d.error||"완료 저장에 실패했습니다.");try{await sendTestEmailNotification(d.emailPayload);await fetch("/api/student/quiz-complete",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({completionId:d.completionId})});setCompletionNotice("학습 완료 기록을 저장하고 카카오메일로 알림을 전송했습니다.")}catch{setCompletionNotice("학습 완료 기록은 저장했습니다. 카카오메일 인증 또는 스팸함을 확인해 주세요.")}};
   const chooseSet = (i: number) => {
     setSetIndex(i);
     reset(mode, i);

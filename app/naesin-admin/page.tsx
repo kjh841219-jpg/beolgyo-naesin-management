@@ -6,6 +6,7 @@ import AdminStudyMaterials from "./AdminStudyMaterials";
 import AdminLearningLinks from "./AdminLearningLinks";
 import FeedbackReportTools from "./FeedbackReportTools";
 import AdminQuizResults from "./AdminQuizResults";
+import StudentLiveQuiz from "./StudentLiveQuiz";
 import AdminHomeworkCompletions from "./AdminHomeworkCompletions";
 import "../learning-tools.css";
 import "./admin.css";
@@ -28,5 +29,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <AdminGate><StudentAdmin /><AdminHomeworkCompletions /><AdminQuizResults /><FeedbackReportTools /><AdminLearningLinks /><AdminStudyMaterials /><AdminWrongAnswers /></AdminGate>;
+  return <AdminGate><StudentAdmin /><StudentLiveQuiz /><AdminHomeworkCompletions /><AdminQuizResults /><FeedbackReportTools /><AdminLearningLinks /><AdminStudyMaterials /><AdminWrongAnswers /></AdminGate>;
 }

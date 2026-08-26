@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { additionalPassages } from "./additionalQuizData";
 import BlankWrongReview from "./BlankWrongReview";
 import { speakEnglish } from "../lib/speakEnglish";
+import {sendTestEmailNotification} from "../test-email";
 
 type Sentence = { en: string; ko: string; keywords: string[] };
 type Passage = {
@@ -356,7 +357,7 @@ export default function QuizProgram() {
     setBuilt([]);
     setChecked(false);
   };
-  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"passage",solved,score,detail:`${currentPublisher} ${currentGrade} ${currentLesson} · ${type}`})}),d=await r.json().catch(()=>({}));setCompletionNotice(d.message||d.error||"완료 처리했습니다.")};
+  const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"passage",solved,score,detail:`${currentPublisher} ${currentGrade} ${currentLesson} · ${type}`})}),d=await r.json().catch(()=>({}));if(!r.ok)return setCompletionNotice(d.error||"완료 저장에 실패했습니다.");try{await sendTestEmailNotification(d.emailPayload);await fetch("/api/student/quiz-complete",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({completionId:d.completionId})});setCompletionNotice("학습 완료 기록을 저장하고 카카오메일로 알림을 전송했습니다.")}catch{setCompletionNotice("학습 완료 기록은 저장했습니다. 카카오메일 인증 또는 스팸함을 확인해 주세요.")}};
   const worksheetText = () =>
     wrongItems
       .map(

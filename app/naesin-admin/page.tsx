@@ -21,6 +21,7 @@ import "./admin-quiz.css";
 import "./student-delete.css";
 import "./admin-homework-live.css";
 import "./live-rings.css";
+import "./floating-report.css";
 
 export const dynamic = "force-dynamic";
 

@@ -1,0 +1,11 @@
+"use client";
+import {PointerEvent,useEffect,useState} from "react";
+type Props={name:string;complete:number;hasRecord:boolean;onQuiz:()=>void;onGraph:()=>void};
+export default function FloatingReportBar({name,complete,hasRecord,onQuiz,onGraph}:Props){
+ const[open,setOpen]=useState(true),[collapsed,setCollapsed]=useState(false),[pos,setPos]=useState({x:260,y:12});
+ useEffect(()=>{try{const saved=JSON.parse(localStorage.getItem("student-report-bar")||"null");if(saved){setPos(saved.pos||pos);setOpen(saved.open!==false);setCollapsed(Boolean(saved.collapsed))}}catch{}},[]);
+ const save=(next:any)=>{localStorage.setItem("student-report-bar",JSON.stringify(next))};
+ const start=(e:PointerEvent<HTMLDivElement>)=>{if((e.target as HTMLElement).closest("button"))return;const sx=e.clientX,sy=e.clientY,origin={...pos};e.currentTarget.setPointerCapture(e.pointerId);const move=(event:any)=>{const next={x:Math.max(8,Math.min(window.innerWidth-260,origin.x+event.clientX-sx)),y:Math.max(8,Math.min(window.innerHeight-70,origin.y+event.clientY-sy))};setPos(next)};const end=(event:any)=>{const next={x:Math.max(8,Math.min(window.innerWidth-260,origin.x+event.clientX-sx)),y:Math.max(8,Math.min(window.innerHeight-70,origin.y+event.clientY-sy))};save({pos:next,open,collapsed});window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",end)};window.addEventListener("pointermove",move);window.addEventListener("pointerup",end)};
+ if(!open)return <button className="report-bar-reopen" onClick={()=>{setOpen(true);save({pos,open:true,collapsed})}}>성적·리포트 바 열기</button>;
+ return <section className={`student-report-toolbar floating ${collapsed?"collapsed":""}`} style={{left:pos.x,top:pos.y}}><div className="report-drag" onPointerDown={start} title="누른 채 자유롭게 이동"><i>⋮⋮</i><div><b>{name} 학생 전체 학습 리포트</b><span>퀴즈 완료 {complete}/3 · 실시간 반영</span></div></div>{!collapsed&&<div className="report-buttons"><button type="button" onClick={onQuiz}>퀴즈 현황 인쇄·PDF 저장</button>{hasRecord&&<button type="button" onClick={onGraph}>내신 그래프 인쇄</button>}</div>}<button className="report-collapse" onClick={()=>{const v=!collapsed;setCollapsed(v);save({pos,open,collapsed:v})}}>{collapsed?"펼치기":"접기"}</button><button className="report-close" aria-label="성적 바 닫기" onClick={()=>{setOpen(false);save({pos,open:false,collapsed})}}>×</button></section>
+}

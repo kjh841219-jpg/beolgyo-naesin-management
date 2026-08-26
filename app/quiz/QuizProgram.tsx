@@ -225,7 +225,16 @@ const normalize = (x: string) =>
     .toLowerCase()
     .replace(/[’']/g, "'")
     .replace(/[^a-z0-9가-힣]/g, "");
-const chunks = (s: string) => s.replace(/[?.!,]/g, "").split(" ");
+const chunks = (s: string) =>
+  (s.match(/[A-Za-z0-9]+(?:[’'][A-Za-z0-9]+)*/g) || []).filter(Boolean);
+const sameWordOrder = (answerWords: string[], sentence: string) => {
+  const expected = chunks(sentence).map(normalize);
+  const submitted = answerWords.map(normalize).filter(Boolean);
+  return (
+    submitted.length === expected.length &&
+    submitted.every((word, index) => word === expected[index])
+  );
+};
 export const quizPassages: Passage[] = [...passages, ...additionalPassages];
 
 export default function QuizProgram() {
@@ -236,6 +245,7 @@ export default function QuizProgram() {
     [index, setIndex] = useState(0),
     [answer, setAnswer] = useState(""),
     [checked, setChecked] = useState(false),
+    [checkedResult, setCheckedResult] = useState<boolean | null>(null),
     [built, setBuilt] = useState<string[]>([]),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
@@ -312,8 +322,8 @@ export default function QuizProgram() {
     () => wrongItems.filter((item: any) => item.quizType === type),
     [wrongItems, type],
   );
-  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
-  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,score,solved]);
+  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setCheckedResult(typeof saved.checkedResult==="boolean"?saved.checkedResult:null);setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,checkedResult,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,checkedResult,score,solved]);
   useEffect(()=>{if(!student?.id||!progressReady)return;const timer=window.setTimeout(()=>void fetch("/api/student/quiz-progress",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({area:"passage",progress:{type,passage,index,answer,built,checked,score,solved,total:current.sentences.length,publisher:currentPublisher,grade:currentGrade,lesson:currentLesson,title:current.title}})}),500);return()=>window.clearTimeout(timer)},[student?.id,progressReady,type,passage,index,answer,built,checked,score,solved,currentPublisher,currentGrade,currentLesson,current.title,current.sentences.length]);
   const shuffled = useMemo(
     () =>
@@ -511,13 +521,14 @@ export default function QuizProgram() {
     await loadHistory();
   };
   const check = async () => {
+    if (checked || saving) return;
+    if (type === "order" && built.length !== chunks(sentence.en).length) return;
     let ok = false;
     if (type === "translate")
       ok =
         sentence.keywords.filter((k) => answer.includes(k)).length >=
         Math.ceil(sentence.keywords.length * 0.65);
-    else if (type === "order")
-      ok = normalize(built.join(" ")) === normalize(sentence.en);
+    else if (type === "order") ok = sameWordOrder(built, sentence.en);
     else
       ok =
         normalize(answer) === normalize(sentence.en) ||
@@ -525,6 +536,7 @@ export default function QuizProgram() {
           normalize(answer).includes(normalize(w)),
         ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
     setChecked(true);
+    setCheckedResult(ok);
     setSolved((v) => v + 1);
     if (ok) setScore((v) => v + 1);
     if (student?.adminPractice) {
@@ -552,33 +564,38 @@ export default function QuizProgram() {
       return;
     }
     setSaving(true);
-    await fetch("/api/student/quiz-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publisher: currentPublisher,
-        grade: currentGrade,
-        lesson: currentLesson,
-        passage: current.title,
-        quizType: type,
-        questionIndex: index + 1,
-        correct: ok,
-        answerText: type === "order" ? built.join(" ") : answer,
-      }),
-    });
-    setSaving(false);
-    await loadHistory();
+    try {
+      const response = await fetch("/api/student/quiz-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          publisher: currentPublisher,
+          grade: currentGrade,
+          lesson: currentLesson,
+          passage: current.title,
+          quizType: type,
+          questionIndex: index + 1,
+          correct: ok,
+          answerText: type === "order" ? built.join(" ") : answer,
+        }),
+      });
+      if (response.ok) await loadHistory();
+    } finally {
+      setSaving(false);
+    }
   };
   const isCorrect =
     type === "translate"
       ? sentence.keywords.filter((k) => answer.includes(k)).length >=
         Math.ceil(sentence.keywords.length * 0.65)
       : type === "order"
-        ? normalize(built.join(" ")) === normalize(sentence.en)
+        ? sameWordOrder(built, sentence.en)
         : normalize(answer) === normalize(sentence.en) ||
           chunks(sentence.en).filter((w) =>
             normalize(answer).includes(normalize(w)),
           ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
+  const displayedCorrect = checkedResult ?? isCorrect;
   if (!ready)
     return (
       <main className="quiz-login">
@@ -878,7 +895,8 @@ export default function QuizProgram() {
                   built.map((w, i) => (
                     <button
                       key={`${w}-${i}`}
-                      onClick={() => setBuilt(built.filter((_, n) => n !== i))}
+                      disabled={checked}
+                      onClick={() => setBuilt((words) => words.filter((_, n) => n !== i))}
                     >
                       {w}
                     </button>
@@ -891,10 +909,11 @@ export default function QuizProgram() {
                 {shuffled.map((x) => (
                   <button
                     disabled={
+                      checked ||
                       built.filter((w) => w === x.word).length >=
                       shuffled.filter((y) => y.word === x.word).length
                     }
-                    onClick={() => setBuilt([...built, x.word])}
+                    onClick={() => setBuilt((words) => [...words, x.word])}
                     key={x.key}
                   >
                     {x.word}
@@ -914,9 +933,9 @@ export default function QuizProgram() {
             />
           )}
           {checked && (
-            <div className={`quiz-result ${isCorrect ? "correct" : "retry"}`}>
+            <div className={`quiz-result ${displayedCorrect ? "correct" : "retry"}`}>
               <b>
-                {isCorrect
+                {displayedCorrect
                   ? "잘했어요! 핵심 내용을 정확히 썼습니다."
                   : "조금만 더 확인해 보세요."}
               </b>
@@ -944,6 +963,7 @@ export default function QuizProgram() {
                 setAnswer("");
                 setBuilt([]);
                 setChecked(false);
+                setCheckedResult(null);
               }}
             >
               다시 쓰기
@@ -951,7 +971,7 @@ export default function QuizProgram() {
             <button
               className="check"
               disabled={
-                saving || (type === "order" ? !built.length : !answer.trim())
+                saving || checked || (type === "order" ? built.length !== chunks(sentence.en).length : !answer.trim())
               }
               onClick={check}
             >

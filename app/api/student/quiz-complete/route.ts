@@ -11,6 +11,7 @@ export async function POST(request:Request){
  await ensureLearningSchema(db);
  const{results}=await db.prepare("SELECT progress_json AS progressJson FROM quiz_progress WHERE student_id=? AND quiz_area=? LIMIT 1").bind(student.id,area).all<any>();
  const progress=results?.[0]?JSON.parse(results[0].progressJson||"{}"):{};
+ const recipient=process.env.QUIZ_NOTIFICATION_EMAIL||"kjh841219@kakao.com";
  let emailSent=false;
  try{
   const form=new URLSearchParams({
@@ -21,9 +22,10 @@ export async function POST(request:Request){
    "학습내용":detail,"푼문제":`${solved}문제`,"정답":`${score}문제`,"정답률":`${rate}%`,
    "완료시각":new Date().toLocaleString("ko-KR",{timeZone:"Asia/Seoul"})
   });
-  const response=await fetch("https://formsubmit.co/ajax/jinsim84%40kakao.com",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",Accept:"application/json"},body:form.toString()});
+  const response=await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",Accept:"application/json"},body:form.toString()});
   const result=await response.json().catch(()=>({})) as any;
   emailSent=response.ok&&(result.success===true||result.success==="true");
  }catch{}
+ await db.prepare("INSERT INTO quiz_completions(student_id,quiz_area,solved,score,accuracy,detail,email_recipient,email_sent,completed_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)").bind(student.id,area,solved,score,rate,detail,recipient,emailSent?1:0).run();
  return Response.json({ok:true,emailSent,message:emailSent?"학습 완료 기록과 이메일 알림을 보냈습니다.":"학습 완료 기록은 저장했습니다. 이메일 서비스 확인이 필요합니다."});
 }

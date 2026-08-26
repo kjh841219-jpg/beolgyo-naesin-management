@@ -26,6 +26,7 @@ export async function ensureLearningSchema(db: D1) {
     db.prepare("CREATE TABLE IF NOT EXISTS quiz_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, publisher TEXT NOT NULL, grade TEXT NOT NULL, lesson TEXT NOT NULL, passage TEXT NOT NULL, quiz_type TEXT NOT NULL, question_index INTEGER NOT NULL, correct INTEGER NOT NULL DEFAULT 0, answer_text TEXT NOT NULL DEFAULT '', study_date TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE TABLE IF NOT EXISTS homework_completions (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, homework_date TEXT NOT NULL, title TEXT NOT NULL, completed_items TEXT NOT NULL DEFAULT '', student_note TEXT NOT NULL DEFAULT '', email_sent INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE TABLE IF NOT EXISTS quiz_progress (student_id INTEGER NOT NULL, quiz_area TEXT NOT NULL, progress_json TEXT NOT NULL DEFAULT '{}', activity_count INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(student_id,quiz_area))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS quiz_completions (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, quiz_area TEXT NOT NULL, solved INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, accuracy INTEGER NOT NULL DEFAULT 0, detail TEXT NOT NULL DEFAULT '', email_recipient TEXT NOT NULL DEFAULT '', email_sent INTEGER NOT NULL DEFAULT 0, completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_study_records_student_date ON study_records(student_id, study_date)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_message_logs_student_created ON message_logs(student_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_student_sessions_token ON student_sessions(token_hash)"),
@@ -37,6 +38,7 @@ export async function ensureLearningSchema(db: D1) {
     db.prepare("CREATE INDEX IF NOT EXISTS idx_quiz_attempts_student_date ON quiz_attempts(student_id, study_date)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_homework_student_date ON homework_completions(student_id, homework_date)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_quiz_progress_updated ON quiz_progress(updated_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_quiz_completions_student_date ON quiz_completions(student_id, completed_at)"),
   ]);
 }
 

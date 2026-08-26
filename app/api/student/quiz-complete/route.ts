@@ -11,7 +11,7 @@ export async function POST(request:Request){
  await ensureLearningSchema(db);
  const{results}=await db.prepare("SELECT progress_json AS progressJson FROM quiz_progress WHERE student_id=? AND quiz_area=? LIMIT 1").bind(student.id,area).all<any>();
  const progress=results?.[0]?JSON.parse(results[0].progressJson||"{}"):{};
- const recipient=process.env.QUIZ_NOTIFICATION_EMAIL||"kjh841219@kakao.com";
+ const recipient=process.env.QUIZ_NOTIFICATION_EMAIL||"jinsim84@kakao.com";
  let emailSent=false;
  try{
   const form=new URLSearchParams({

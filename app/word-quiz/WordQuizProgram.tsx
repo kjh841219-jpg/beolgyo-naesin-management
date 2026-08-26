@@ -553,7 +553,7 @@ export default function WordQuizProgram() {
             </>
           )}
           <div className="wq-actions">
-            {student?.id&&<button className="wq-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
+            {student?.id&&<button className="wq-complete" onClick={completeQuiz} disabled={solved<queue.length}>{solved>=queue.length?"단어퀴즈 완료·메일 알림 보내기":`전체 ${queue.length}문제 완료 후 버튼 활성화 (${solved}/${queue.length})`}</button>}
             <button className="wq-print" onClick={printCurrentWord}>
               현재 문제 인쇄
             </button>

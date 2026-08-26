@@ -926,7 +926,7 @@ export default function QuizProgram() {
             </div>
           )}
           <div className="quiz-actions">
-            {student?.id&&<button className="quiz-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
+            {student?.id&&<button className="quiz-complete" onClick={completeQuiz} disabled={solved<current.sentences.length}>{solved>=current.sentences.length?`${type==="translate"?"해석 쓰기":type==="order"?"순서 배열":"전체 쓰기"} 완료·메일 알림 보내기`:`전체 ${current.sentences.length}문장 완료 후 버튼 활성화 (${solved}/${current.sentences.length})`}</button>}
             <button className="print-question" onClick={() => printCurrentPassage(type)}>
               현재 영역 전체 본문 인쇄
             </button>

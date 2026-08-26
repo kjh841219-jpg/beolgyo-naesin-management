@@ -456,7 +456,7 @@ export default function FullBlankQuiz() {
           </div>
         )}
         <div className="fb-actions">
-          {student?.id&&<button className="fb-complete" onClick={completeQuiz}>이 항목 학습 완료·알림 보내기</button>}
+          {student?.id&&<button className="fb-complete" onClick={completeQuiz} disabled={!checked}>{checked?"본문 빈칸 완료·메일 알림 보내기":"정답 확인 후 완료 버튼이 활성화됩니다."}</button>}
           <button className="fb-print" onClick={() => printRows(false)}>
             빈칸 문제 인쇄
           </button>

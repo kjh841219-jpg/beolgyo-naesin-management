@@ -1,6 +1,6 @@
 type TestEmailPayload = {
   email: string;
-  kind: "레벨테스트" | "DAILY 미니테스트";
+  kind: "레벨테스트" | "DAILY 미니테스트" | "단어퀴즈" | "본문퀴즈" | "본문 빈칸퀴즈";
   studentName: string;
   phone: string;
   date: string;
@@ -8,6 +8,7 @@ type TestEmailPayload = {
   score: number;
   total: number;
   details: string;
+  adminUrl?: string;
 };
 
 export async function sendTestEmailNotification(payload: TestEmailPayload) {
@@ -24,7 +25,7 @@ export async function sendTestEmailNotification(payload: TestEmailPayload) {
     "응시단계": payload.level,
     "총점": `${payload.score}/${payload.total}`,
     "영역별결과": payload.details,
-    "관리자페이지": "https://vercel-deploy-mauve-one-18.vercel.app/admin",
+    "관리자페이지": payload.adminUrl ?? "https://vercel-deploy-mauve-one-18.vercel.app/admin",
   });
   const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(email)}`, {
     method: "POST",

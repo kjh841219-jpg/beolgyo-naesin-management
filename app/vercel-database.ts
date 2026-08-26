@@ -8,6 +8,7 @@ function postgres(sql:string){
   .replace(/datetime\('now','\+12 hours'\)/gi,"(CURRENT_TIMESTAMP + INTERVAL '12 hours')")
   .replace(/datetime\('now','\+14 days'\)/gi,"(CURRENT_TIMESTAMP + INTERVAL '14 days')")
   .replace(/completed_at TEXT NOT NULL DEFAULT ''/gi,"completed_at TIMESTAMPTZ NULL")
+  .replace(/completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP/gi,"completed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP")
   .replace(/expires_at TEXT NOT NULL/gi,"expires_at TIMESTAMPTZ NOT NULL")
   .replace(/created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP/gi,"created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP")
   .replace(/updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP/gi,"updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP")

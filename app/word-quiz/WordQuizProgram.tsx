@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { wordSets } from "./wordQuizData";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 import {sendTestEmailNotification} from "../test-email";
@@ -38,6 +38,7 @@ export default function WordQuizProgram() {
     [position, setPosition] = useState(0),
     [answer, setAnswer] = useState(""),
     [checked, setChecked] = useState(false),
+    [gradedCorrect, setGradedCorrect] = useState<boolean | null>(null),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
     [saving, setSaving] = useState(false),
@@ -46,6 +47,8 @@ export default function WordQuizProgram() {
     [spokenText, setSpokenText] = useState(""),
     [pronunciationScore, setPronunciationScore] = useState<number | null>(null),
     [speechNotice, setSpeechNotice] = useState("");
+  const gradingRef = useRef(false);
+  const [saveNotice,setSaveNotice]=useState("");
   const [completionNotice,setCompletionNotice]=useState("");
   const [progressReady,setProgressReady]=useState(false);
   const current = wordSets[setIndex],
@@ -69,13 +72,17 @@ export default function WordQuizProgram() {
     [mode, position],
   );
   const reset = (nextMode: Mode = mode, nextSet = setIndex) => {
+    gradingRef.current=false;
     setMode(nextMode);
     setQueue(mix(wordSets[nextSet].words.map((_, i) => i)));
     setPosition(0);
     setAnswer("");
     setChecked(false);
+    setGradedCorrect(null);
     setScore(0);
     setSolved(0);
+    setSaving(false);
+    setSaveNotice("");
   };
   useEffect(() => {
     setQueue(mix(wordSets[0].words.map((_, i) => i)));
@@ -89,8 +96,8 @@ export default function WordQuizProgram() {
       })
       .catch(() => setReady(true));
   }, []);
-  useEffect(()=>{if(!student)return;const key=`beolgyo-word-progress-${student.id||student.name}`;try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&wordSets[saved.setIndex]){setSetIndex(saved.setIndex);setMode(saved.mode||"study");setQueue(Array.isArray(saved.queue)&&saved.queue.length?saved.queue:wordSets[saved.setIndex].words.map((_:unknown,i:number)=>i));setPosition(Math.min(saved.position||0,wordSets[saved.setIndex].words.length-1));setAnswer(saved.answer||"");setChecked(Boolean(saved.checked));setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
-  useEffect(()=>{if(!student||!progressReady||!queue.length)return;localStorage.setItem(`beolgyo-word-progress-${student.id||student.name}`,JSON.stringify({setIndex,mode,queue,position,answer,checked,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,setIndex,mode,queue,position,answer,checked,score,solved]);
+  useEffect(()=>{if(!student)return;const key=`beolgyo-word-progress-${student.id||student.name}`;try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&wordSets[saved.setIndex]){setSetIndex(saved.setIndex);setMode(saved.mode||"study");setQueue(Array.isArray(saved.queue)&&saved.queue.length?saved.queue:wordSets[saved.setIndex].words.map((_:unknown,i:number)=>i));setPosition(Math.min(saved.position||0,wordSets[saved.setIndex].words.length-1));setAnswer(saved.answer||"");setChecked(Boolean(saved.checked));setGradedCorrect(typeof saved.gradedCorrect==="boolean"?saved.gradedCorrect:null);setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady||!queue.length)return;localStorage.setItem(`beolgyo-word-progress-${student.id||student.name}`,JSON.stringify({setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved]);
   useEffect(()=>{if(!student?.id||!progressReady||!queue.length)return;const timer=window.setTimeout(()=>void fetch("/api/student/quiz-progress",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({area:"word",progress:{setIndex,mode,position,answer,checked,score,solved,total:queue.length,publisher:current.publisher,grade:current.grade,lesson:current.lesson}})}),500);return()=>window.clearTimeout(timer)},[student?.id,progressReady,setIndex,mode,position,answer,checked,score,solved,current.publisher,current.grade,current.lesson,queue.length]);
   const login = async (e: FormEvent) => {
     e.preventDefault();
@@ -126,37 +133,60 @@ export default function WordQuizProgram() {
               clean(x).includes(clean(answer)),
           )
       : clean(answer) === clean(item.word);
-  const grade = async () => {
-    if (checked || !answer.trim()) return;
+  const grade = () => {
+    if (gradingRef.current || checked || !answer.trim()) return;
+    gradingRef.current=true;
+    const resultCorrect=correct;
+    const submittedAnswer=answer;
     setChecked(true);
+    setGradedCorrect(resultCorrect);
     setSolved((v) => v + 1);
-    if (correct) setScore((v) => v + 1);
-    if (student.adminPractice) return;
+    if (resultCorrect) setScore((v) => v + 1);
+    if (student.adminPractice) { gradingRef.current=false; return; }
     setSaving(true);
-    await fetch("/api/student/quiz-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    setSaveNotice("정답을 표시했습니다. 학습기록을 저장하고 있어요.");
+    const payload=JSON.stringify({
         publisher: current.publisher,
         grade: current.grade,
         lesson: current.lesson,
         passage: `단어 테스트 · ${current.lesson}`,
         quizType: mode === "meaning" ? "word-meaning" : "word-mixed",
         questionIndex: (queue[position] ?? 0) + 1,
-        correct,
-        answerText: answer,
-      }),
+        correct:resultCorrect,
+        answerText:submittedAnswer,
+      });
+    const saveWithTimeout=async()=>{
+      for(let attempt=0;attempt<2;attempt+=1){
+        const controller=new AbortController();
+        const timeout=window.setTimeout(()=>controller.abort(),7000);
+        try{
+          const response=await fetch("/api/student/quiz-results",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:payload,signal:controller.signal});
+          if(response.ok)return;
+        }catch{}
+        finally{window.clearTimeout(timeout)}
+      }
+      throw new Error("save failed");
+    };
+    void saveWithTimeout().then(()=>{
+      setSaveNotice("정답과 학습기록을 저장했습니다.");
+    }).catch(()=>{
+      setSaveNotice("정답은 확인되었습니다. 기록 저장이 지연되고 있으니 인터넷 연결을 확인해 주세요.");
+    }).finally(()=>{
+      setSaving(false);
+      gradingRef.current=false;
     });
-    setSaving(false);
   };
   const next = () => {
+    gradingRef.current=false;
     stopEnglishSpeech();
     setPosition((v) => (v + 1) % queue.length);
     setAnswer("");
     setChecked(false);
+    setGradedCorrect(null);
     setSpokenText("");
     setPronunciationScore(null);
     setSpeechNotice("");
+    setSaveNotice("");
   };
   const completeQuiz=async()=>{const r=await fetch("/api/student/quiz-complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({area:"word",solved,score,detail:`${current.publisher} ${current.grade} ${current.lesson} · ${mode}`})}),d=await r.json().catch(()=>({}));if(!r.ok)return setCompletionNotice(d.error||"완료 저장에 실패했습니다.");try{await sendTestEmailNotification(d.emailPayload);await fetch("/api/student/quiz-complete",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({completionId:d.completionId})});setCompletionNotice("학습 완료 기록을 저장하고 카카오메일로 알림을 전송했습니다.")}catch{setCompletionNotice("학습 완료 기록은 저장했습니다. 카카오메일 인증 또는 스팸함을 확인해 주세요.")}};
   const chooseSet = (i: number) => {
@@ -536,13 +566,14 @@ export default function WordQuizProgram() {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && grade()}
+                readOnly={checked}
                 placeholder={
                   direction === "meaning" ? "우리말 뜻 입력" : "영단어 입력"
                 }
               />
               {checked && (
-                <div className={`wq-result ${correct ? "correct" : "retry"}`}>
-                  <b>{correct ? "정답입니다!" : "다시 확인해 보세요."}</b>
+                <div className={`wq-result ${gradedCorrect ? "correct" : "retry"}`}>
+                  <b>{gradedCorrect ? "정답입니다!" : "다시 확인해 보세요."}</b>
                   <p>
                     정답:{" "}
                     <strong>
@@ -560,14 +591,15 @@ export default function WordQuizProgram() {
             </button>
             {mode !== "study" && (
               <button
-                disabled={saving || checked || !answer.trim()}
+                disabled={checked || !answer.trim()}
                 onClick={grade}
               >
-                {student.adminPractice ? "정답 확인" : "정답 확인 + 기록 저장"}
+                {student.adminPractice ? "정답 확인" : checked ? "정답 확인 완료" : "정답 확인 + 기록 저장"}
               </button>
             )}
             <button onClick={next}>다음 단어 →</button>
           </div>
+          {saveNotice&&<p className={`wq-save-notice ${saving?"saving":""}`} role="status" aria-live="polite">{saveNotice}</p>}
           {completionNotice&&<p className="wq-completion-notice">{completionNotice}</p>}
           <small className="wq-source">자료: {current.source}</small>
         </article>

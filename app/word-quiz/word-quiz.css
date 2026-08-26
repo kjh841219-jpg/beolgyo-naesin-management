@@ -302,6 +302,9 @@
   background: #147a63;
   color: #fff;
   font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .wq-actions .wq-print {
   border: 1px solid #bcded5;
@@ -313,7 +316,9 @@
 }
 .wq-actions button:disabled {
   opacity: 0.4;
+  cursor: not-allowed;
 }
+.wq-save-notice{margin:10px 0 0;padding:10px 12px;border-radius:9px;background:#e8f8f2;color:#087a59;font-size:12px;font-weight:800}.wq-save-notice.saving{background:#eef5ff;color:#1764c0}
 .wq-source {
   display: block;
   margin-top: 25px;
@@ -488,9 +493,14 @@
   .wq-actions {
     display: grid;
     grid-template-columns: 1fr;
+    position: relative;
+    z-index: 4;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
   .wq-actions button {
     width: 100%;
+    min-height: 50px;
+    font-size: 14px;
   }
 }
 .wq-actions .wq-complete{background:#16835f;color:#fff}.wq-completion-notice{margin:10px 0;padding:11px;border-radius:9px;background:#eaf8f2;color:#147153;font-size:12px}

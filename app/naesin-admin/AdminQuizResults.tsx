@@ -7,10 +7,10 @@ type Daily={studentId:number;name:string;studyDate:string;total:number;correct:n
 type DailyCategory=Daily&{category:"word"|"passage"};
 type TypeRow={studentId:number;name:string;quizType:string;total:number;correct:number;accuracy:number};
 type Recent={id:number;studentId:number;name:string;publisher:string;grade:string;lesson:string;passage:string;quizType:string;questionIndex:number;correct:number;studyDate:string};
-type Live={studentId:number;name:string;school:string;grade:string;quizArea:"word"|"passage"|"blank";activityCount:number;updatedAt:string;progress:any};
+type Live={studentId:number;name:string;school:string;grade:string;quizArea:"word"|"passage"|"blank"|"story";activityCount:number;updatedAt:string;progress:any};
 type Completion={id:number;studentId:number;name:string;quizArea:"word"|"passage"|"blank";solved:number;score:number;accuracy:number;detail:string;emailSent:number;completedAt:string};
 type Data={students:Student[];daily:Daily[];dailyCategories:DailyCategory[];types:TypeRow[];recent:Recent[];liveProgress:Live[];completions:Completion[]};
-const labels:Record<string,string>={translation:"해석 쓰기",ordering:"본문 순서 배열",full_translation:"전체 해석 보고 쓰기",translate:"해석 쓰기",order:"본문 순서 배열",write:"전체 해석 보고 쓰기",blank:"본문 전체 랜덤 빈칸","blank-sentence":"랜덤 빈칸 문장","word-meaning":"단어 뜻쓰기","word-spelling":"뜻 보고 단어쓰기","word-mixed":"단어 혼합 테스트"};
+const labels:Record<string,string>={translation:"해석 쓰기",ordering:"본문 순서 배열",full_translation:"전체 해석 보고 쓰기",translate:"해석 쓰기",order:"본문 순서 배열",write:"전체 해석 보고 쓰기",blank:"본문 전체 랜덤 빈칸","blank-sentence":"랜덤 빈칸 문장","word-meaning":"단어 뜻쓰기","word-spelling":"뜻 보고 단어쓰기","word-mixed":"단어 혼합 테스트","story-listen":"Story Town 문장 듣기","story-order":"Story Town 순서 배열","story-write":"Story Town 문장 쓰기"};
 const empty:Data={students:[],daily:[],dailyCategories:[],types:[],recent:[],liveProgress:[],completions:[]};
 
 export default function AdminQuizResults(){

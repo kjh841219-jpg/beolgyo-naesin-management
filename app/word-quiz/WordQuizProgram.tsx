@@ -6,7 +6,22 @@ import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
-const clean = (s: string) => s.toLowerCase().replace(/[~·,./()\s-]/g, "");
+const clean = (s: string) =>
+  s.toLowerCase().replace(/[’]/g, "'").replace(/[~·,./()\s-]/g, "");
+const meaningMatches = (answer: string, meaning: string) => {
+  const submitted = clean(answer);
+  if (!submitted) return false;
+  return meaning
+    .split(/[,;/]| 또는 |, |\//)
+    .map(clean)
+    .filter(Boolean)
+    .some(
+      (accepted) =>
+        submitted === accepted ||
+        (submitted.length >= 3 && accepted.length >= 3 &&
+          (submitted.includes(accepted) || accepted.includes(submitted))),
+    );
+};
 const mix = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
 const similarityScore = (spoken: string, target: string) => {
   const a = clean(spoken), b = clean(target);
@@ -125,13 +140,7 @@ export default function WordQuizProgram() {
   const speak = (word = item.word) => speakEnglish(word);
   const correct =
     direction === "meaning"
-      ? item.meaning
-          .split(/[,;/]| 또는 |, |\//)
-          .some(
-            (x) =>
-              clean(answer).includes(clean(x)) ||
-              clean(x).includes(clean(answer)),
-          )
+      ? meaningMatches(answer, item.meaning)
       : clean(answer) === clean(item.word);
   const grade = () => {
     if (gradingRef.current || checked || !answer.trim()) return;

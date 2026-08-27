@@ -529,12 +529,7 @@ export default function QuizProgram() {
         sentence.keywords.filter((k) => answer.includes(k)).length >=
         Math.ceil(sentence.keywords.length * 0.65);
     else if (type === "order") ok = sameWordOrder(built, sentence.en);
-    else
-      ok =
-        normalize(answer) === normalize(sentence.en) ||
-        chunks(sentence.en).filter((w) =>
-          normalize(answer).includes(normalize(w)),
-        ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
+    else ok = normalize(answer) === normalize(sentence.en);
     setChecked(true);
     setCheckedResult(ok);
     setSolved((v) => v + 1);
@@ -565,11 +560,7 @@ export default function QuizProgram() {
     }
     setSaving(true);
     try {
-      const response = await fetch("/api/student/quiz-results", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({
+      const payload = JSON.stringify({
           publisher: currentPublisher,
           grade: currentGrade,
           lesson: currentLesson,
@@ -578,9 +569,16 @@ export default function QuizProgram() {
           questionIndex: index + 1,
           correct: ok,
           answerText: type === "order" ? built.join(" ") : answer,
-        }),
-      });
+        });
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
+      const response = await fetch("/api/student/quiz-results", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        keepalive: true, body: payload, signal: controller.signal,
+      }).finally(() => window.clearTimeout(timeout));
       if (response.ok) await loadHistory();
+    } catch {
+      // 정답 표시는 유지하고 네트워크 잠금만 해제합니다.
     } finally {
       setSaving(false);
     }
@@ -591,11 +589,9 @@ export default function QuizProgram() {
         Math.ceil(sentence.keywords.length * 0.65)
       : type === "order"
         ? sameWordOrder(built, sentence.en)
-        : normalize(answer) === normalize(sentence.en) ||
-          chunks(sentence.en).filter((w) =>
-            normalize(answer).includes(normalize(w)),
-          ).length >= Math.ceil(chunks(sentence.en).length * 0.8);
+        : normalize(answer) === normalize(sentence.en);
   const displayedCorrect = checkedResult ?? isCorrect;
+  useEffect(() => { if (!checked) setCheckedResult(null); }, [checked]);
   if (!ready)
     return (
       <main className="quiz-login">

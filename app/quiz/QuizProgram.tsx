@@ -249,6 +249,8 @@ export default function QuizProgram() {
     [built, setBuilt] = useState<string[]>([]),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
+    [completedSentences, setCompletedSentences] = useState<number[]>([]),
+    [correctSentences, setCorrectSentences] = useState<number[]>([]),
     [student, setStudent] = useState<any>(null),
     [ready, setReady] = useState(false),
     [name, setName] = useState(""),
@@ -322,8 +324,8 @@ export default function QuizProgram() {
     () => wrongItems.filter((item: any) => item.quizType === type),
     [wrongItems, type],
   );
-  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setCheckedResult(typeof saved.checkedResult==="boolean"?saved.checkedResult:null);setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
-  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,checkedResult,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,checkedResult,score,solved]);
+  useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setCheckedResult(typeof saved.checkedResult==="boolean"?saved.checkedResult:null);const done=Array.isArray(saved.completedSentences)?saved.completedSentences:[];const right=Array.isArray(saved.correctSentences)?saved.correctSentences:[];setCompletedSentences(done);setCorrectSentences(right);setSolved(done.length);setScore(right.length)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,checkedResult,score,solved,completedSentences,correctSentences,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,checkedResult,score,solved,completedSentences,correctSentences]);
   useEffect(()=>{if(!student?.id||!progressReady)return;const timer=window.setTimeout(()=>void fetch("/api/student/quiz-progress",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({area:"passage",progress:{type,passage,index,answer,built,checked,score,solved,total:current.sentences.length,publisher:currentPublisher,grade:currentGrade,lesson:currentLesson,title:current.title}})}),500);return()=>window.clearTimeout(timer)},[student?.id,progressReady,type,passage,index,answer,built,checked,score,solved,currentPublisher,currentGrade,currentLesson,current.title,current.sentences.length]);
   const shuffled = useMemo(
     () =>
@@ -532,8 +534,14 @@ export default function QuizProgram() {
     else ok = normalize(answer) === normalize(sentence.en);
     setChecked(true);
     setCheckedResult(ok);
-    setSolved((v) => v + 1);
-    if (ok) setScore((v) => v + 1);
+    if (!reviewQueue.length && !completedSentences.includes(index)) {
+      setCompletedSentences((items) => [...items, index]);
+      setSolved((v) => Math.min(current.sentences.length, v + 1));
+    }
+    if (!reviewQueue.length && ok && !correctSentences.includes(index)) {
+      setCorrectSentences((items) => [...items, index]);
+      setScore((v) => Math.min(current.sentences.length, v + 1));
+    }
     if (student?.adminPractice) {
       const key = `${passage}-${type}-${index}`;
       setAdminWrong((items: any[]) =>
@@ -776,6 +784,7 @@ export default function QuizProgram() {
               setAnswer("");
               setBuilt([]);
               setChecked(false);
+              setCompletedSentences([]); setCorrectSentences([]); setSolved(0); setScore(0);
             }}
           >
             {publishers.map((x) => (
@@ -798,6 +807,7 @@ export default function QuizProgram() {
               setAnswer("");
               setBuilt([]);
               setChecked(false);
+              setCompletedSentences([]); setCorrectSentences([]); setSolved(0); setScore(0);
             }}
           >
             {grades.map((x) => (
@@ -815,6 +825,7 @@ export default function QuizProgram() {
               setAnswer("");
               setBuilt([]);
               setChecked(false);
+              setCompletedSentences([]); setCorrectSentences([]); setSolved(0); setScore(0);
             }}
           >
             {lessonPassages.map(({ p, i }) => (
@@ -840,6 +851,7 @@ export default function QuizProgram() {
                 setAnswer("");
                 setBuilt([]);
                 setChecked(false);
+                setCompletedSentences([]); setCorrectSentences([]); setSolved(0); setScore(0);
               }}
               key={x[0]}
             >

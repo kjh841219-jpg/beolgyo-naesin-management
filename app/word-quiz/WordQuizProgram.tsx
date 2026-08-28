@@ -56,6 +56,8 @@ export default function WordQuizProgram() {
     [gradedCorrect, setGradedCorrect] = useState<boolean | null>(null),
     [score, setScore] = useState(0),
     [solved, setSolved] = useState(0),
+    [completedWords, setCompletedWords] = useState<number[]>([]),
+    [correctWords, setCorrectWords] = useState<number[]>([]),
     [saving, setSaving] = useState(false),
     [printMode, setPrintMode] = useState<PrintMode>("meaning"),
     [recording, setRecording] = useState(false),
@@ -96,6 +98,8 @@ export default function WordQuizProgram() {
     setGradedCorrect(null);
     setScore(0);
     setSolved(0);
+    setCompletedWords([]);
+    setCorrectWords([]);
     setSaving(false);
     setSaveNotice("");
   };
@@ -111,8 +115,8 @@ export default function WordQuizProgram() {
       })
       .catch(() => setReady(true));
   }, []);
-  useEffect(()=>{if(!student)return;const key=`beolgyo-word-progress-${student.id||student.name}`;try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&wordSets[saved.setIndex]){setSetIndex(saved.setIndex);setMode(saved.mode||"study");setQueue(Array.isArray(saved.queue)&&saved.queue.length?saved.queue:wordSets[saved.setIndex].words.map((_:unknown,i:number)=>i));setPosition(Math.min(saved.position||0,wordSets[saved.setIndex].words.length-1));setAnswer(saved.answer||"");setChecked(Boolean(saved.checked));setGradedCorrect(typeof saved.gradedCorrect==="boolean"?saved.gradedCorrect:null);setScore(saved.score||0);setSolved(saved.solved||0)}}catch{}setProgressReady(true)},[student]);
-  useEffect(()=>{if(!student||!progressReady||!queue.length)return;localStorage.setItem(`beolgyo-word-progress-${student.id||student.name}`,JSON.stringify({setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved,updatedAt:new Date().toISOString()}))},[student,progressReady,setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved]);
+  useEffect(()=>{if(!student)return;const key=`beolgyo-word-progress-${student.id||student.name}`;try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&wordSets[saved.setIndex]){setSetIndex(saved.setIndex);setMode(saved.mode||"study");setQueue(Array.isArray(saved.queue)&&saved.queue.length?saved.queue:wordSets[saved.setIndex].words.map((_:unknown,i:number)=>i));setPosition(Math.min(saved.position||0,wordSets[saved.setIndex].words.length-1));setAnswer(saved.answer||"");setChecked(Boolean(saved.checked));setGradedCorrect(typeof saved.gradedCorrect==="boolean"?saved.gradedCorrect:null);const done=Array.isArray(saved.completedWords)?saved.completedWords:[];const right=Array.isArray(saved.correctWords)?saved.correctWords:[];setCompletedWords(done);setCorrectWords(right);setSolved(done.length);setScore(right.length)}}catch{}setProgressReady(true)},[student]);
+  useEffect(()=>{if(!student||!progressReady||!queue.length)return;localStorage.setItem(`beolgyo-word-progress-${student.id||student.name}`,JSON.stringify({setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved,completedWords,correctWords,updatedAt:new Date().toISOString()}))},[student,progressReady,setIndex,mode,queue,position,answer,checked,gradedCorrect,score,solved,completedWords,correctWords]);
   useEffect(()=>{if(!student?.id||!progressReady||!queue.length)return;const timer=window.setTimeout(()=>void fetch("/api/student/quiz-progress",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({area:"word",progress:{setIndex,mode,position,answer,checked,score,solved,total:queue.length,publisher:current.publisher,grade:current.grade,lesson:current.lesson}})}),500);return()=>window.clearTimeout(timer)},[student?.id,progressReady,setIndex,mode,position,answer,checked,score,solved,current.publisher,current.grade,current.lesson,queue.length]);
   const login = async (e: FormEvent) => {
     e.preventDefault();
@@ -147,10 +151,17 @@ export default function WordQuizProgram() {
     gradingRef.current=true;
     const resultCorrect=correct;
     const submittedAnswer=answer;
+    const wordIndex=queue[position] ?? 0;
     setChecked(true);
     setGradedCorrect(resultCorrect);
-    setSolved((v) => v + 1);
-    if (resultCorrect) setScore((v) => v + 1);
+    if (!completedWords.includes(wordIndex)) {
+      setCompletedWords((items) => [...items, wordIndex]);
+      setSolved((v) => Math.min(queue.length, v + 1));
+    }
+    if (resultCorrect && !correctWords.includes(wordIndex)) {
+      setCorrectWords((items) => [...items, wordIndex]);
+      setScore((v) => Math.min(queue.length, v + 1));
+    }
     if (student.adminPractice) { gradingRef.current=false; return; }
     setSaving(true);
     setSaveNotice("정답을 표시했습니다. 학습기록을 저장하고 있어요.");

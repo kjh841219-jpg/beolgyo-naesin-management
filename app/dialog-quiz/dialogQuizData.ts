@@ -1,8 +1,10 @@
+import { historicalDialogSets } from "./historicalDialogQuizData";
+
 export type DialogLine={speaker:string;en:string;ko:string};
 export type DialogSet={publisher:string;grade:string;lesson:string;title:string;source:string;lines:DialogLine[]};
 const l=(speaker:string,en:string,ko:string):DialogLine=>({speaker,en,ko});
 
-export const dialogSets:DialogSet[]=[
+const recentDialogSets:DialogSet[]=[
  {publisher:"천재교육 · 소영순",grade:"중학교 2학년",lesson:"6과",title:"공유 자전거 이용하기",source:"(2022개정)2026년_중2_천재(소영순)_6과_[01]내용정리 플러스.pdf",lines:[
   l("W","Excuse me, how can I use this bike?","실례합니다, 이 자전거를 어떻게 사용할 수 있나요?"),l("M","It's simple. First, sign up for our app. Then, add your credit card.","간단해요. 먼저 저희 앱에 등록하세요. 그다음 신용카드를 추가하세요."),l("W","Umm, okay. I did. What's next?","음, 알겠어요. 했어요. 그다음은요?"),l("M","Lastly, tag your phone on the bike.","마지막으로 자전거에 휴대 전화를 태그하세요."),l("W","Oh, it worked.","오, 됐어요."),l("M","Great. Enjoy your ride.","좋아요. 즐겁게 타세요."),l("W","Thank you.","감사합니다.") ]},
  {publisher:"천재교육 · 소영순",grade:"중학교 2학년",lesson:"6과",title:"박물관 가는 버스",source:"(2022개정)2026년_중2_천재(소영순)_6과_[01]내용정리 플러스.pdf",lines:[
@@ -24,3 +26,5 @@ export const dialogSets:DialogSet[]=[
  {publisher:"비상교육 · 황종배",grade:"중학교 2학년",lesson:"6과",title:"과학 캠프",source:"(2022개정)2026년_중2_비상(황종배)_6과_[01]내용정리 플러스.pdf",lines:[
   l("M","Kate, do you know anything about the science camp this year?","Kate, 너는 올해 과학 캠프에 대해 뭐 아는 거 있어?"),l("W","Yeah. It's from September 10th to 12th on the school field.","응. 9월 10일부터 12일까지 학교 운동장에서 열려."),l("M","Are there any special programs at the camp?","캠프에 특별한 프로그램이 있니?"),l("W","Yes. There's a special talk about life in the sea.","응. 바다 속 생명에 관한 특별 강연이 있어."),l("M","Oh, I'm really curious about that.","오, 나는 그것에 대해 정말 궁금해."),l("W","Me, too. Are you going to go to the camp?","나도 그래. 너는 캠프에 갈 거니?"),l("M","Yes, I am.","응, 갈 거야."),l("W","Great. I'll see you there.","잘됐네. 거기서 봐.") ]}
 ];
+
+export const dialogSets:DialogSet[]=[...historicalDialogSets,...recentDialogSets];

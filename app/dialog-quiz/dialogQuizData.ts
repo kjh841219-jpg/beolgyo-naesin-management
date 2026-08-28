@@ -27,4 +27,12 @@ const recentDialogSets:DialogSet[]=[
   l("M","Kate, do you know anything about the science camp this year?","Kate, 너는 올해 과학 캠프에 대해 뭐 아는 거 있어?"),l("W","Yeah. It's from September 10th to 12th on the school field.","응. 9월 10일부터 12일까지 학교 운동장에서 열려."),l("M","Are there any special programs at the camp?","캠프에 특별한 프로그램이 있니?"),l("W","Yes. There's a special talk about life in the sea.","응. 바다 속 생명에 관한 특별 강연이 있어."),l("M","Oh, I'm really curious about that.","오, 나는 그것에 대해 정말 궁금해."),l("W","Me, too. Are you going to go to the camp?","나도 그래. 너는 캠프에 갈 거니?"),l("M","Yes, I am.","응, 갈 거야."),l("W","Great. I'll see you there.","잘됐네. 거기서 봐.") ]}
 ];
 
-export const dialogSets:DialogSet[]=[...historicalDialogSets,...recentDialogSets];
+const allDialogSets:DialogSet[]=[...historicalDialogSets,...recentDialogSets];
+const miraeDialogSets=allDialogSets
+ .filter(set=>set.publisher==="미래엔 · 최연희")
+ .sort((a,b)=>Number.parseInt(a.lesson)-Number.parseInt(b.lesson));
+let miraeIndex=0;
+
+export const dialogSets:DialogSet[]=allDialogSets.map(set=>
+ set.publisher==="미래엔 · 최연희"?miraeDialogSets[miraeIndex++]:set
+);

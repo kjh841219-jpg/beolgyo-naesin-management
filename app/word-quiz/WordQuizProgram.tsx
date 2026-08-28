@@ -1,11 +1,13 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { wordSets } from "./wordQuizData";
+import { wordSets as baseWordSets } from "./wordQuizData";
+import { supplementalWordSets } from "./supplementalWordQuizData";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
+const wordSets=[...baseWordSets,...supplementalWordSets];
 const clean = (s: string) =>
   s.toLowerCase().replace(/[’]/g, "'").replace(/[~·,./()\s-]/g, "");
 const meaningMatches = (answer: string, meaning: string) => {
@@ -428,6 +430,7 @@ export default function WordQuizProgram() {
             {student.adminPractice ? "관리자 연습" : `${student.name} 학생`}
           </b>
           <a href="/quiz">본문 퀴즈</a>
+          <a href="/dialog-quiz">대화문 퀴즈</a>
           <a href="/naesin">내신관리 홈</a>
           <button
             onClick={async () => {

@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { clean } from "../../admin/learning/_shared";
-import { syncDashboardRoster } from "../../admin/learning/dashboard-roster";
 import {
   COOKIE,
   database,
@@ -23,7 +22,6 @@ export async function POST(request: Request) {
     );
   const db = database();
   await ensureLearningSchema(db);
-  await syncDashboardRoster(db);
   const hash = await sha256(code),
     { results } = await db
       .prepare(

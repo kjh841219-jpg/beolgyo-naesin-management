@@ -1,10 +1,9 @@
 import { clean, database, ensureLearningSchema, requireAdmin, sha256 } from "../_shared";
-import { syncDashboardRoster } from "../dashboard-roster";
 import { env } from "cloudflare:workers";
 
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
-  const db = database(); await ensureLearningSchema(db); await syncDashboardRoster(db);
+  const db = database(); await ensureLearningSchema(db);
   const { results } = await db.prepare("SELECT id, name, school, grade, parent_phone AS parentPhone, exam_date AS examDate, memo, created_at AS createdAt FROM students ORDER BY name").all();
   return Response.json({ items: results ?? [] });
 }
@@ -12,8 +11,8 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
   const body = await request.json().catch(() => ({}));
-  const name=clean(body.name,40), school=clean(body.school,80)||"미등록", grade=clean(body.grade,30), phone=clean(body.parentPhone,20).replace(/\D/g,""), examDate=clean(body.examDate,10), memo=clean(body.memo,500),accessCode=phone.slice(-4);
-  if(!name||!grade||!/^01\d{8,9}$/.test(phone)||!/^\d{4}$/.test(accessCode)) return Response.json({error:"학생 이름, 학년, 전화번호를 확인해 주세요."},{status:400});
+  const name=clean(body.name,40), school=clean(body.school,80)||"미등록", grade=clean(body.grade,30)||"미지정", phone=clean(body.parentPhone,20).replace(/\D/g,""), examDate=clean(body.examDate,10), memo=clean(body.memo,500),accessCode=phone.slice(-4);
+  if(!name||!/^01\d{8,9}$/.test(phone)||!/^\d{4}$/.test(accessCode)) return Response.json({error:"학생 이름과 전화번호를 확인해 주세요."},{status:400});
   const db=database(); await ensureLearningSchema(db);
   await db.prepare("DELETE FROM deleted_roster_students WHERE name=?").bind(name).run();
   const result=await db.prepare("INSERT INTO students (name,school,grade,parent_phone,exam_date,memo,access_code_hash) VALUES (?,?,?,?,?,?,?)").bind(name,school,grade,phone,examDate,memo,await sha256(accessCode)).run();

@@ -1,3 +1,4 @@
 .student-login-help{display:block;margin-top:10px;color:#64748b;font-size:10px;line-height:1.6}
 .modal-fields label>small{color:#64748b;font-size:9px}
 .admin-side nav a.dialog-practice-link{margin-top:8px;color:#d9e7ff;background:rgba(36,94,219,.28)}
+.student-simple-fields{grid-template-columns:1fr}.student-simple-fields label{grid-column:1}

@@ -32,7 +32,7 @@ export async function DELETE(request: Request) {
     db.prepare("SELECT file_key AS fileKey FROM study_materials WHERE student_id=?").bind(id).all<{fileKey:string}>(),
   ]);
   await db.batch([
-    db.prepare("INSERT INTO deleted_roster_students(name,deleted_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(name) DO UPDATE SET deleted_at=CURRENT_TIMESTAMP").bind(student.name),
+    db.prepare("INSERT INTO deleted_roster_students(name,deleted_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(name) DO UPDATE SET deleted_at=CURRENT_TIMESTAMP RETURNING name").bind(student.name),
     db.prepare("DELETE FROM student_sessions WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM exam_analyses WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM study_records WHERE student_id=?").bind(id),

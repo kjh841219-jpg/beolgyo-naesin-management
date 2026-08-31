@@ -14,6 +14,7 @@ export function database(): D1 {
 export async function ensureLearningSchema(db: D1) {
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, school TEXT NOT NULL, grade TEXT NOT NULL, parent_phone TEXT NOT NULL, exam_date TEXT NOT NULL DEFAULT '', memo TEXT NOT NULL DEFAULT '', access_code_hash TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS deleted_roster_students (name TEXT PRIMARY KEY, deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE TABLE IF NOT EXISTS student_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, token_hash TEXT NOT NULL, expires_at TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE TABLE IF NOT EXISTS admin_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, token_hash TEXT NOT NULL, expires_at TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
     db.prepare("CREATE TABLE IF NOT EXISTS exam_analyses (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, exam_name TEXT NOT NULL, exam_date TEXT NOT NULL, score INTEGER NOT NULL, total_score INTEGER NOT NULL DEFAULT 100, question_errors TEXT NOT NULL DEFAULT '', mistake_types TEXT NOT NULL DEFAULT '', mistake_reasons TEXT NOT NULL DEFAULT '', difficult_units TEXT NOT NULL DEFAULT '', good_points TEXT NOT NULL DEFAULT '', action_plan TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),

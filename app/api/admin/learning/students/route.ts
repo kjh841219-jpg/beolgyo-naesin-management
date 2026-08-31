@@ -12,9 +12,10 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
   const body = await request.json().catch(() => ({}));
-  const name=clean(body.name,40), school=clean(body.school,80), grade=clean(body.grade,30), phone=clean(body.parentPhone,20).replace(/\D/g,""), examDate=clean(body.examDate,10), memo=clean(body.memo,500),accessCode=clean(body.accessCode,4).replace(/\D/g,"");
-  if(!name||!school||!grade||!/^01\d{8,9}$/.test(phone)||!/^\d{4}$/.test(accessCode)) return Response.json({error:"학생 정보와 연락처 뒷번호 4자리를 확인해 주세요."},{status:400});
+  const name=clean(body.name,40), school=clean(body.school,80)||"미등록", grade=clean(body.grade,30), phone=clean(body.parentPhone,20).replace(/\D/g,""), examDate=clean(body.examDate,10), memo=clean(body.memo,500),accessCode=phone.slice(-4);
+  if(!name||!grade||!/^01\d{8,9}$/.test(phone)||!/^\d{4}$/.test(accessCode)) return Response.json({error:"학생 이름, 학년, 전화번호를 확인해 주세요."},{status:400});
   const db=database(); await ensureLearningSchema(db);
+  await db.prepare("DELETE FROM deleted_roster_students WHERE name=?").bind(name).run();
   const result=await db.prepare("INSERT INTO students (name,school,grade,parent_phone,exam_date,memo,access_code_hash) VALUES (?,?,?,?,?,?,?)").bind(name,school,grade,phone,examDate,memo,await sha256(accessCode)).run();
   return Response.json({ok:true,id:result.meta?.last_row_id},{status:201});
 }
@@ -32,6 +33,7 @@ export async function DELETE(request: Request) {
     db.prepare("SELECT file_key AS fileKey FROM study_materials WHERE student_id=?").bind(id).all<{fileKey:string}>(),
   ]);
   await db.batch([
+    db.prepare("INSERT INTO deleted_roster_students(name,deleted_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(name) DO UPDATE SET deleted_at=CURRENT_TIMESTAMP").bind(student.name),
     db.prepare("DELETE FROM student_sessions WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM exam_analyses WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM study_records WHERE student_id=?").bind(id),
@@ -40,6 +42,8 @@ export async function DELETE(request: Request) {
     db.prepare("DELETE FROM study_materials WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM learning_links WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM quiz_attempts WHERE student_id=?").bind(id),
+    db.prepare("DELETE FROM quiz_progress WHERE student_id=?").bind(id),
+    db.prepare("DELETE FROM quiz_completions WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM homework_completions WHERE student_id=?").bind(id),
     db.prepare("DELETE FROM students WHERE id=?").bind(id),
   ]);

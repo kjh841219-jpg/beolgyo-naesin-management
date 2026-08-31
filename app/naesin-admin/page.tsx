@@ -22,6 +22,7 @@ import "./student-delete.css";
 import "./admin-homework-live.css";
 import "./live-rings.css";
 import "./floating-report.css";
+import "./student-login-controls.css";
 
 export const dynamic = "force-dynamic";
 

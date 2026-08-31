@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { COOKIE_NAME, createAdminSession, isValidAdminPassword } from "../../../admin-auth";
+import { COOKIE_NAME, createAdminSession, isAdminAuthenticated, isValidAdminPassword } from "../../../admin-auth";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ authenticated: false }, { status: 401 });
+  }
+  return NextResponse.json({ authenticated: true });
+}
 
 export async function POST(request: Request) {
   const payload = await request.json().catch(() => ({})) as { password?: string };

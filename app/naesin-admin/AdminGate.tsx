@@ -44,7 +44,7 @@ export default function AdminGate({ children }: { children: ReactNode }) {
     <label><span>관리자 비밀번호</span><input autoFocus required type="password" inputMode="numeric" maxLength={4} value={password} onChange={(event) => setPassword(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="비밀번호 4자리" /></label>
     {error && <div className="admin-login-error">{error}</div>}
     <button disabled={sending || password.length !== 4}>{sending ? "확인 중…" : "관리자 페이지 들어가기"}</button>
-    <a className="admin-practice-login" href="/dialog-quiz#admin-login">관리자 연습 로그인 →</a>
+    <a className="admin-practice-login" href="/quiz">관리자 연습 로그인 →</a>
     <a className="admin-login-back" href="/naesin">← 내신관리 랜딩페이지 바로보기</a>
   </form></main>;
   return <>{children}</>;

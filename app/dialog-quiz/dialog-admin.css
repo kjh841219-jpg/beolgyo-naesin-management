@@ -1,6 +1,0 @@
-.dialog-admin-panel{margin:18px auto 0;width:min(1180px,calc(100% - 40px));padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #bdd3f1;border-radius:14px;background:#edf5ff}
-.dialog-admin-panel div{display:grid;gap:4px}
-.dialog-admin-panel b{color:#174f95;font-size:12px}
-.dialog-admin-panel span{color:#64748b;font-size:10px}
-.dialog-admin-panel a{padding:11px 14px;border-radius:10px;color:#fff;background:#1764c0;text-decoration:none;font-size:10px;font-weight:900}
-@media(max-width:760px){.dialog-admin-panel{align-items:stretch;flex-direction:column}.dialog-admin-panel a{text-align:center}}

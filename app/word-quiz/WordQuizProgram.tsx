@@ -519,8 +519,8 @@ export default function WordQuizProgram() {
       </section>
       <section className="wq-print-all">
         <div><p>PRINTABLE WORD TEST</p><h2>전체 단어 문제지 만들기</h2><span>현재 선택한 과의 모든 단어를 원하는 문제 유형으로 출력합니다.</span></div>
-        <label>문제 유형<select value={printMode} onChange={(e) => setPrintMode(e.target.value as PrintMode)}><option value="meaning">영단어 보고 뜻쓰기</option><option value="spelling">뜻 보고 영단어 쓰기</option><option value="mixed">단어·뜻 혼합</option></select></label>
-        <button onClick={printAllWords}>전체 {current.words.length}문제 인쇄</button>
+        <div className="wq-print-modes" role="group" aria-label="인쇄 문제 유형"><button className={printMode==="meaning"?"active":""} onClick={()=>setPrintMode("meaning")}>영단어 → 뜻</button><button className={printMode==="spelling"?"active":""} onClick={()=>setPrintMode("spelling")}>뜻 → 영단어</button><button className={printMode==="mixed"?"active":""} onClick={()=>setPrintMode("mixed")}>단어·뜻 혼합</button></div>
+        <button onClick={printAllWords}>{printMode==="meaning"?"뜻쓰기":printMode==="spelling"?"영단어 쓰기":"혼합"} 전체 {current.words.length}문제 인쇄</button>
       </section>
       <section className="wq-shell">
         <aside>
@@ -533,7 +533,7 @@ export default function WordQuizProgram() {
             <button
               key={x[0]}
               className={mode === x[0] ? "active" : ""}
-              onClick={() => reset(x[0] as Mode)}
+              onClick={() => {if(x[0]==="meaning")setPrintMode("meaning");if(x[0]==="mixed")setPrintMode("mixed");reset(x[0] as Mode)}}
             >
               <i>{x[1]}</i>
               <b>{x[2]}</b>

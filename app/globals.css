@@ -49,6 +49,7 @@ section { scroll-margin-top: 86px; }
 .nav-admin { padding-left: 14px; border-left: 1px solid #dce4d7; color: #768171 !important; font-size: 11px; white-space: nowrap; }
 .nav-admin:hover { color: var(--blue-dark) !important; }
 .nav-naesin { padding: 10px 13px; border: 1px solid #b9d59f; border-radius: 999px; color: #315f18 !important; background: #eef7e8; white-space: nowrap; }
+.nav-miraen-learning { padding: 10px 13px; border: 1px solid #b5caeb; border-radius: 999px; color: #19579f !important; background: #eef5ff; white-space: nowrap; }
 
 .compact-schedule { padding: 20px 42px 15px; color: #fff; background: var(--blue-dark); }
 .compact-schedule-inner { width: min(1236px, 100%); margin: 0 auto; display: grid; grid-template-columns: auto minmax(360px, 1fr); gap: 30px; align-items: center; }
@@ -1705,6 +1706,8 @@ footer { max-width: 1236px; min-height: 160px; margin: 0 auto; display: grid; gr
     white-space: normal;
     overflow-wrap: anywhere;
   }
+  .site-header nav .nav-miraen-learning,
+  .portal-header nav .nav-miraen-learning { border-color: #b5caeb; color: #19579f !important; background: #eef5ff; }
   .site-header nav .portal-active,
   .portal-header nav .portal-active { border-color: #83ae65; color: #315f18 !important; background: #eaf4e4; }
   .site-header nav .nav-daily-test,

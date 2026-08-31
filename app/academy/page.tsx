@@ -59,6 +59,7 @@ export default function Home() {
         </a>
         <nav aria-label="주요 메뉴">
           <a className="nav-naesin" href="https://naesin-vercel-deploy.vercel.app/">내신관리</a>
+          <a className="nav-miraen-learning" href="/miraen-learning">미래엔영어학습</a>
           <a className="portal-active" href="/academy">학원소개</a>
           <a href="/academy-calendar">학원일정</a>
           <a href="/">학사일정</a>

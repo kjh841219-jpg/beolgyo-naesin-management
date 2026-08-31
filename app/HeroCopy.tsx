@@ -22,6 +22,7 @@ export function HeroCopy() {
       <p className="hero-description">{content.heroDescription}</p>
       <div className="hero-actions">
         <a className="button management-button" href="https://naesin-vercel-deploy.vercel.app/">학원관리 내신사이트 <span>→</span></a>
+        <a className="button learning-button" href="/miraen-learning">미래엔영어학습 <span>→</span></a>
         <a className="button button-dark" href="#level-test">무료 레벨테스트 <span>→</span></a>
         <a className="button button-light" href="#consult">학생 상담예약</a>
       </div>

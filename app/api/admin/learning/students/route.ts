@@ -1,9 +1,10 @@
 import { clean, database, ensureLearningSchema, requireAdmin, sha256 } from "../_shared";
+import { syncDashboardRoster } from "../dashboard-roster";
 import { env } from "cloudflare:workers";
 
 export async function GET() {
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
-  const db = database(); await ensureLearningSchema(db);
+  const db = database(); await ensureLearningSchema(db); await syncDashboardRoster(db);
   const { results } = await db.prepare("SELECT id, name, school, grade, parent_phone AS parentPhone, exam_date AS examDate, memo, created_at AS createdAt FROM students ORDER BY name").all();
   return Response.json({ items: results ?? [] });
 }

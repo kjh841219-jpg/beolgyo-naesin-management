@@ -7,6 +7,7 @@ import {
   sha256,
   studentSession,
 } from "../_shared";
+import { syncDashboardRoster } from "../../admin/learning/dashboard-roster";
 export async function GET() {
   const student = await studentSession();
   return Response.json({ authenticated: Boolean(student), student });
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
     );
   const db = database();
   await ensureLearningSchema(db);
+  await syncDashboardRoster(db);
   const hash = await sha256(code),
     { results } = await db
       .prepare(

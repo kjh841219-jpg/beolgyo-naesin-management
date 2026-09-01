@@ -860,13 +860,8 @@ export default function QuizProgram() {
               <small>{x[3]}</small>
             </button>
           ))}
-          <a className="quiz-blank-link dialog-link" href="/dialog-quiz">
-            <i>04</i>
-            <b>대화문 퀴즈</b>
-            <small>해석·순서배열·영작 연습</small>
-          </a>
           <a className="quiz-blank-link" href="/quiz/full-blank">
-            <i>05</i>
+            <i>04</i>
             <b>본문 전체 빈칸</b>
             <small>전체 본문 랜덤 빈칸 채우기</small>
           </a>

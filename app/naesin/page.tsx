@@ -22,9 +22,14 @@ const routines = [
 
 export default function NaesinPage() {
   return <main className="naesin-page">
+    <style>{`
+      .ns-header .ns-dialog-link{padding:10px 13px;border:1px solid #8f72dc;border-radius:9px;color:#5632aa;background:#f5f0ff;font-weight:900;white-space:nowrap}
+      @media(max-width:850px){.ns-header nav>a.ns-dialog-link{display:inline-flex;padding:10px 13px;color:#fff;background:#6e4bc6;border-color:#6e4bc6;white-space:nowrap}}
+      @media(max-width:560px){.ns-header nav>a.ns-dialog-link{display:none}.ns-mobile-actions{grid-template-columns:repeat(4,1fr)}.ns-mobile-actions a{font-size:10px;letter-spacing:-.04em}.ns-mobile-actions a:nth-child(3){color:#fff;background:#6e4bc6}.ns-mobile-actions a:nth-child(4){color:var(--ns-navy);background:#edf3ff}}
+    `}</style>
     <header className="ns-header">
       <a className="ns-brand" href="/academy"><span>M</span><b>벌교미래엔영어학원</b></a>
-      <nav aria-label="내신 대비 메뉴"><a className="ns-home-link" href="https://vercel-deploy-mauve-one-18.vercel.app/academy">벌교미래엔영어 랜딩페이지</a><a href="#plan">4주 계획</a><a href="#system">관리 방식</a><Link className="ns-word-link" href="/word-quiz">단어 퀴즈</Link><Link className="ns-quiz-link" href="/quiz">본문 퀴즈</Link><Link className="ns-student-login" href="/study-log">학생 로그인</Link><Link className="ns-admin-login" href="/naesin-admin">관리자 로그인</Link><a className="ns-nav-cta" href="https://vercel-deploy-mauve-one-18.vercel.app/academy#consult">상담 예약</a></nav>
+      <nav aria-label="내신 대비 메뉴"><a className="ns-home-link" href="https://vercel-deploy-mauve-one-18.vercel.app/academy">벌교미래엔영어 랜딩페이지</a><a href="#plan">4주 계획</a><a href="#system">관리 방식</a><Link className="ns-word-link" href="/word-quiz">단어 퀴즈</Link><Link className="ns-quiz-link" href="/quiz">본문 퀴즈</Link><Link className="ns-dialog-link" href="/dialog-quiz">대화문 퀴즈</Link><Link className="ns-student-login" href="/study-log">학생 로그인</Link><Link className="ns-admin-login" href="/naesin-admin">관리자 로그인</Link><a className="ns-nav-cta" href="https://vercel-deploy-mauve-one-18.vercel.app/academy#consult">상담 예약</a></nav>
     </header>
 
     <section className="ns-hero">
@@ -69,6 +74,6 @@ export default function NaesinPage() {
 
     <section className="ns-cta"><p>이번 시험, 준비 방식부터 달라져야 합니다.</p><h2>우리 아이의 시험 범위와 현재 수준에 맞는<br/><strong>4주 내신 계획</strong>을 상담해 보세요.</h2><a href="https://vercel-deploy-mauve-one-18.vercel.app/academy#consult">내신 대비 상담 예약 <span>→</span></a><small>상담 후 학생별 시험 범위와 학습 상태에 맞춰 안내드립니다.</small></section>
     <footer className="ns-footer"><a className="ns-brand" href="/academy"><span>M</span><b>벌교미래엔영어학원</b></a><p>학생별 시험 범위와 학습 상태에 따라 수업 및 계획은 달라질 수 있습니다.</p></footer>
-    <div className="ns-mobile-actions"><Link href="/word-quiz">단어 퀴즈</Link><Link href="/quiz">본문 퀴즈</Link><a href="https://vercel-deploy-mauve-one-18.vercel.app/academy#consult">상담 예약</a></div>
+    <div className="ns-mobile-actions"><Link href="/word-quiz">단어 퀴즈</Link><Link href="/quiz">본문 퀴즈</Link><Link href="/dialog-quiz">대화문 퀴즈</Link><a href="https://vercel-deploy-mauve-one-18.vercel.app/academy#consult">상담 예약</a></div>
   </main>
 }

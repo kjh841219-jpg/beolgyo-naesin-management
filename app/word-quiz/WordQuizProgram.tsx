@@ -244,12 +244,29 @@ export default function WordQuizProgram() {
         return `<article><b>${i + 1}.</b><span>${spelling ? word.meaning : word.word}</span><i></i></article>`;
       })
       .join("");
-    const popup = window.open("", "_blank", "width=1000,height=760");
-    if (!popup) return window.print();
-    popup.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${label} 전체 문제지</title><style>@page{size:A4;margin:12mm}body{font-family:'Malgun Gothic',sans-serif;color:#152b42}.brand,.footer{text-align:center;font-weight:800;color:#147a63;padding:8px;border-bottom:2px solid #147a63}.footer{border:0;border-top:2px solid #147a63;margin-top:20px}h1{font-size:22px;margin-bottom:6px}.meta{color:#66758a;margin-bottom:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}article{min-height:54px;padding:9px 0;display:grid;grid-template-columns:30px 1fr;align-items:start;border-bottom:1px solid #c8d1da;page-break-inside:avoid}article b{color:#147a63}article span{font-size:14px}article i{grid-column:2;height:20px;border-bottom:1px solid #777}</style></head><body><div class="brand">보성벌교내신은 벌교미래엔영어</div><h1>벌교미래엔영어 · ${label} 전체 문제지</h1><div class="meta">출판사: ${current.publisher} · 학년: ${current.grade} · 과: ${current.lesson} · 총 ${current.words.length}문제<br>이름: ____________ 날짜: ____________ 점수: ________</div><section class="grid">${rows}</section><div class="footer">보성벌교내신은 벌교미래엔영어 · ${current.publisher} · ${current.grade}</div></body></html>`);
-    popup.document.close();
-    popup.focus();
-    window.setTimeout(() => { popup.print(); popup.close(); }, 300);
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    document.body.appendChild(frame);
+    const printDocument = frame.contentDocument;
+    const printWindow = frame.contentWindow;
+    if (!printDocument || !printWindow) {
+      frame.remove();
+      return;
+    }
+    printDocument.open();
+    printDocument.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${label} 전체 문제지</title><style>@page{size:A4;margin:12mm}body{font-family:'Malgun Gothic',sans-serif;color:#152b42}.brand,.footer{text-align:center;font-weight:800;color:#147a63;padding:8px;border-bottom:2px solid #147a63}.footer{border:0;border-top:2px solid #147a63;margin-top:20px}h1{font-size:22px;margin-bottom:6px}.meta{color:#66758a;margin-bottom:22px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}article{min-height:54px;padding:9px 0;display:grid;grid-template-columns:30px 1fr;align-items:start;border-bottom:1px solid #c8d1da;page-break-inside:avoid}article b{color:#147a63}article span{font-size:14px}article i{grid-column:2;height:20px;border-bottom:1px solid #777}</style></head><body><div class="brand">보성벌교내신은 벌교미래엔영어</div><h1>벌교미래엔영어 · ${label} 전체 문제지</h1><div class="meta">출판사: ${current.publisher} · 학년: ${current.grade} · 과: ${current.lesson} · 총 ${current.words.length}문제<br>이름: ____________ 날짜: ____________ 점수: ________</div><section class="grid">${rows}</section><div class="footer">보성벌교내신은 벌교미래엔영어 · ${current.publisher} · ${current.grade}</div></body></html>`);
+    printDocument.close();
+    window.setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      window.setTimeout(() => frame.remove(), 1000);
+    }, 150);
   };
   const startPronunciation = async () => {
     const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;

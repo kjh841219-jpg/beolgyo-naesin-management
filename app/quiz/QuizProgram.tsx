@@ -1,6 +1,9 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { additionalPassages } from "./additionalQuizData";
+import exam2026March29to32 from "./exam2026March29to32.json";
+import exam2025SeptemberAll from "./exam2025SeptemberAll.json";
+import { listening2026March1to8 } from "./listening2026March1to8";
 import BlankWrongReview from "./BlankWrongReview";
 import { speakEnglish } from "../lib/speakEnglish";
 import {sendTestEmailNotification} from "../test-email";
@@ -235,7 +238,14 @@ const sameWordOrder = (answerWords: string[], sentence: string) => {
     submitted.every((word, index) => word === expected[index])
   );
 };
-export const quizPassages: Passage[] = [...passages, ...additionalPassages];
+export const quizPassages: Passage[] = [
+  ...passages,
+  ...additionalPassages,
+  ...exam2026March29to32,
+  ...listening2026March1to8,
+  ...exam2025SeptemberAll,
+];
+const numberOrder=(value:string)=>Number.parseInt(value.match(/\d+/)?.[0]||"999",10);
 
 export default function QuizProgram() {
   const [type, setType] = useState<"translate" | "order" | "write">(
@@ -294,7 +304,8 @@ export default function QuizProgram() {
       ({ p }) =>
         (p.publisher || "천재교육 · 소영순") === currentPublisher &&
         (p.grade || "중학교 2학년") === currentGrade,
-    );
+    )
+    .sort((a,b)=>numberOrder(a.p.lesson||"999")-numberOrder(b.p.lesson||"999")||a.p.title.localeCompare(b.p.title,"ko"));
   const wrongItems = useMemo(
     () =>
       student?.adminPractice

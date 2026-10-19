@@ -1,6 +1,7 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
+import { get, list } from "@vercel/blob";
 import { randomUUID } from "node:crypto";
 
 export type ConsultationRecord = {
@@ -101,8 +102,29 @@ async function saveJsonRecord<T extends { id: string; createdAt: string }>(kind:
 async function listJsonRecords<T>(kind: RecordKind): Promise<T[]> {
   await ensureSchema();
   const sql = database();
-  const rows = await sql`SELECT payload FROM academy_records WHERE kind = ${kind} ORDER BY created_at DESC LIMIT 1000`;
+  const rows = await sql`SELECT payload FROM academy_records WHERE kind = ${kind} ORDER BY created_at DESC`;
   return rows.map((row) => row.payload as T);
+}
+
+async function listLegacyBlobRecords<T>(prefix: string): Promise<T[]> {
+  try {
+    const records: T[] = [];
+    let cursor: string | undefined;
+    do {
+      const result = await list({ prefix, limit: 1000, cursor });
+      const page = await Promise.all(result.blobs.map(async (blob) => {
+        const response = await get(blob.pathname, { access: "private", useCache: false });
+        if (!response || response.statusCode !== 200 || !response.stream) return null;
+        return (await new Response(response.stream).json()) as T;
+      }));
+      records.push(...page.filter((record) => record !== null) as T[]);
+      cursor = result.hasMore ? result.cursor : undefined;
+    } while (cursor);
+    return records;
+  } catch (error) {
+    console.error("[record-store] legacy Blob records could not be loaded", error);
+    return [];
+  }
 }
 
 export async function getJsonSetting<T>(key: string): Promise<T | null> {
@@ -165,7 +187,30 @@ export async function createDailyResult(input: Omit<DailyResultRecord, "id" | "c
 }
 
 export async function getDailyResults() {
-  return listJsonRecords<DailyResultRecord>("daily-result");
+  const [databaseRecords, legacyRecords] = await Promise.all([
+    listJsonRecords<DailyResultRecord>("daily-result"),
+    listLegacyBlobRecords<DailyResultRecord>("records/daily-results/"),
+  ]);
+  const merged = new Map<string, DailyResultRecord>();
+  legacyRecords.forEach((record) => {
+    // The recovered 2026-08-31 batch was once stored as 2026-09-01 during the
+    // legacy-to-database restore. Keep the original August assessment month.
+    const restoredAugustDate = record.testDate === "2026-09-01"
+      ? "2026-08-31"
+      : record.testDate;
+    merged.set(record.id, {
+      ...record,
+      testDate: restoredAugustDate,
+      grammar: Number(record.grammar ?? 0),
+      grammarTotal: Number(record.grammarTotal ?? 0),
+    });
+  });
+  databaseRecords.forEach((record) => merged.set(record.id, {
+    ...record,
+    grammar: Number(record.grammar ?? 0),
+    grammarTotal: Number(record.grammarTotal ?? 0),
+  }));
+  return [...merged.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function escapeXml(value: unknown) {

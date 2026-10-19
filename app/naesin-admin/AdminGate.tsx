@@ -10,13 +10,26 @@ export default function AdminGate({ children }: { children: ReactNode }) {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/auth", { cache: "no-store" })
+    const params = new URLSearchParams(window.location.search);
+    const verifiedEntry = params.get("session") === "1";
+    if (!verifiedEntry) {
+      setAuthenticated(false);
+      setReady(true);
+      return;
+    }
+    fetch("/api/admin/auth", { cache: "no-store", credentials: "include" })
       .then((response) => {
         setAuthenticated(response.ok);
         setReady(true);
       })
       .catch(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    if (!authenticated || !window.location.hash) return;
+    const timer = window.setTimeout(() => document.querySelector(window.location.hash)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    return () => window.clearTimeout(timer);
+  }, [authenticated]);
 
   async function login(event: FormEvent) {
     event.preventDefault();
@@ -33,7 +46,7 @@ export default function AdminGate({ children }: { children: ReactNode }) {
       setError(data.error || "로그인하지 못했습니다.");
       return;
     }
-    setAuthenticated(true);
+    window.location.replace(`/naesin-admin?session=1&v=${Date.now()}`);
   }
 
   if (!ready) return <main className="admin-gate"><div className="admin-login-card"><p>관리자 화면을 준비하고 있습니다…</p></div></main>;

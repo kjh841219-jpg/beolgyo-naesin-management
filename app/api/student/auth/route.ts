@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const hash = await sha256(code),
     { results } = await db
       .prepare(
-        "SELECT id,name,school,grade,exam_date AS examDate FROM students WHERE REPLACE(name,' ','')=? AND (access_code_hash=? OR SUBSTR(REPLACE(REPLACE(parent_phone,'-',''),' ',''),-4)=?) ORDER BY CASE WHEN access_code_hash=? THEN 0 ELSE 1 END LIMIT 1",
+        "SELECT id,name,school,grade,exam_date AS examDate FROM students WHERE REPLACE(name,' ','')=? AND (access_code_hash=? OR SUBSTR(REPLACE(REPLACE(student_phone,'-',''),' ',''),-4)=?) ORDER BY CASE WHEN access_code_hash=? THEN 0 ELSE 1 END LIMIT 1",
       )
       .bind(name, hash, code, hash)
       .all<any>();

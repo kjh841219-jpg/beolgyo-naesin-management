@@ -1,0 +1,8 @@
+.student-final-save{margin:0;padding:34px max(18px,calc((100% - 1180px)/2)) 70px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;color:#fff;background:linear-gradient(135deg,#0d347c,#17634f)}
+.student-final-save span{font-size:11px;font-weight:900;letter-spacing:.14em;color:#9ee8cd}
+.student-final-save h2{margin:6px 0;font-size:27px}
+.student-final-save p{grid-column:1/-1;margin:0;color:#d7e7e5}
+.student-final-save button{min-height:56px;padding:0 24px;border:2px solid #fff;border-radius:15px;color:#0d347c;background:#fff;font:inherit;font-weight:900;cursor:pointer;box-shadow:0 10px 25px #061a3b44}
+.student-final-save button:hover{transform:translateY(-1px)}
+.student-final-save button b{margin-left:8px;color:#15805f}
+@media(max-width:700px){.student-final-save{grid-template-columns:1fr;padding:28px 16px 46px}.student-final-save h2{font-size:22px}.student-final-save button{width:100%}}

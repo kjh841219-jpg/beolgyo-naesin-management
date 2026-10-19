@@ -8,6 +8,9 @@ import FeedbackReportTools from "./FeedbackReportTools";
 import AdminQuizResults from "./AdminQuizResults";
 import StudentLiveQuiz from "./StudentLiveQuiz";
 import AdminHomeworkCompletions from "./AdminHomeworkCompletions";
+import AdminHomeworkSubmissions from "./AdminHomeworkSubmissions";
+import AdminResourceSubmissions from "./AdminResourceSubmissions";
+import AdminStudentMirror from "./AdminStudentMirror";
 import "../learning-tools.css";
 import "./admin.css";
 import "./admin-extra.css";
@@ -15,6 +18,9 @@ import "./admin-login-override.css";
 import "./admin-practice-login.css";
 import "./wrong-answer-admin.css";
 import "./photo-analysis-extra.css";
+import "./kakao-share.css";
+import "./photo-name-visibility.css";
+import "./photo-homework-layout.css";
 import "./circle-progress.css";
 import "./study-materials-admin.css";
 import "./material-solutions-admin.css";
@@ -25,6 +31,11 @@ import "./live-rings.css";
 import "./floating-report.css";
 import "./student-login-controls.css";
 import "./feedback-formation.css";
+import "./admin-submissions.css";
+import "./admin-resource-results.css";
+import "./resource-assignment-state.css";
+import "./resource-upload-progress.css";
+import "./student-mirror.css";
 
 export const dynamic = "force-dynamic";
 
@@ -34,5 +45,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <AdminGate><StudentAdmin /><StudentLiveQuiz /><AdminHomeworkCompletions /><AdminQuizResults /><FeedbackReportTools /><AdminLearningLinks /><AdminStudyMaterials /><AdminWrongAnswers /></AdminGate>;
+  return <AdminGate><StudentAdmin /><FeedbackReportTools /><AdminStudentMirror /><StudentLiveQuiz /><AdminHomeworkSubmissions /><AdminWrongAnswers /><AdminHomeworkCompletions /><AdminQuizResults /><AdminLearningLinks /><AdminResourceSubmissions /><AdminStudyMaterials /></AdminGate>;
 }

@@ -114,6 +114,38 @@ for (const [bankName, bank] of Object.entries(data)) {
   }
 }
 
+// Middle/high tests must have enough coherent variants to cover a complete
+// 31-day month without returning the exact same rendered item.
+const monthlyLevels = ["elementary-low", "elementary-mid", "elementary-high", "middle-1", "middle-2", "middle-3", "high-intro", "high-basic", "high-advanced"];
+for (const level of monthlyLevels) {
+  const requiredBySkill = level === "elementary-low"
+    ? { "듣기": 3, "단어": 3, "리딩": 3 }
+    : { "듣기": 4, "문법": 4, "단어": 1, "리딩": 3 };
+  const bankLevel = level.startsWith("high-") ? "high" : level;
+  const difficulty = level.startsWith("high-")
+    ? (data.highDifficultyQuestions[level] || []).filter((_, index) => index % 2 === 0)
+    : [];
+  const pool = [
+    ...(data.dailySets[bankLevel] || []).flatMap((set) => set.questions),
+    ...(data.extraQuestions[bankLevel] || []),
+    ...(data.additionalListeningQuestions[bankLevel] || []),
+    ...(data.grammarQuestions[bankLevel] || []),
+    ...(data.supplementaryQuestions[bankLevel] || []),
+    ...difficulty,
+  ];
+  const counts = {};
+  for (const [skill, dailyCount] of Object.entries(requiredBySkill)) {
+    const sourceCount = pool.filter((question) => question.skill === skill).length;
+    const uniqueRenderedCapacity = sourceCount * 48;
+    const monthlyRequired = dailyCount * 31;
+    counts[skill] = sourceCount;
+    if (uniqueRenderedCapacity < monthlyRequired) {
+      errors.push(`${level}.${skill}: 31일 중복 방지 용량 부족 (${uniqueRenderedCapacity}/${monthlyRequired})`);
+    }
+  }
+  console.log(`${level} 원문 문제은행 — 듣기 ${counts["듣기"]}, 문법 ${counts["문법"]}, 단어 ${counts["단어"]}, 리딩 ${counts["리딩"]}`);
+}
+
 console.log(`DAILY 문항 ${questionCount}개 검사 완료`);
 warnings.forEach((warning) => console.warn(`주의: ${warning}`));
 errors.forEach((error) => console.error(`오류: ${error}`));

@@ -2,8 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLandingContent } from "./useLandingContent";
-import { sendTestEmailNotification } from "./test-email";
 import { DAILY_MINI_TEST_AUTHORING_PROMPT } from "./daily-mini-test-prompt";
+
+declare global {
+  interface Window {
+    Kakao?: {
+      isInitialized: () => boolean;
+      init: (key: string) => void;
+      Share: {
+        sendDefault: (settings: {
+          objectType: "text";
+          text: string;
+          link: { mobileWebUrl: string; webUrl: string };
+          buttonTitle: string;
+        }) => void;
+      };
+    };
+  }
+}
 
 type BankLevelId = "elementary-low" | "elementary-mid" | "elementary-high" | "middle-1" | "middle-2" | "middle-3" | "high";
 type LevelId = Exclude<BankLevelId, "high"> | "high-intro" | "high-basic" | "high-advanced";
@@ -388,6 +404,300 @@ const supplementaryQuestions: Record<BankLevelId, Question[]> = {
   ],
 };
 
+// Extra authored items keep the high-volume daily areas from wrapping back to
+// yesterday's source questions. These are deliberately written rather than
+// produced through token substitution so grammar, meaning, and answer keys
+// remain stable.
+const antiRepeatQuestions: Record<BankLevelId, Question[]> = {
+  "elementary-low": [
+    { skill: "단어", prompt: "‘창문’에 해당하는 영어 단어는?", options: ["window", "pencil", "flower", "kitchen"], answer: 0 },
+    { skill: "단어", prompt: "‘행복한’에 해당하는 영어 단어는?", options: ["happy", "small", "cold", "slow"], answer: 0 },
+    { skill: "리딩", prompt: "What does Jisu have?", passage: "Jisu has a small yellow umbrella.", options: ["A yellow umbrella", "A red hat", "A blue cup", "A green book"], answer: 0 },
+    { skill: "리딩", prompt: "Where is the cat?", passage: "The cat is sleeping on the sofa.", options: ["On the sofa", "Under the tree", "In the bag", "By the door"], answer: 0 },
+  ],
+  "elementary-mid": [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. She ___ to school every day.", options: ["goes", "go", "going", "went tomorrow"], answer: 0 },
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. There ___ two apples on the table.", options: ["are", "is", "am", "be"], answer: 0 },
+    { skill: "리딩", prompt: "Why does Sumi take an umbrella?", passage: "Dark clouds are in the sky. Sumi takes an umbrella before she leaves home.", options: ["It may rain.", "It is very hot.", "She lost her bag.", "She wants to exercise."], answer: 0 },
+    { skill: "리딩", prompt: "What does Junho do after dinner?", passage: "Junho washes the dishes after dinner. Then he reads a comic book.", options: ["He washes the dishes.", "He plays soccer.", "He cooks breakfast.", "He goes to school."], answer: 0 },
+  ],
+  "elementary-high": [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. We ___ the museum last Saturday.", options: ["visited", "visit", "visits", "visiting"], answer: 0 },
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. This box is ___ than that one.", options: ["heavier", "heavy", "heaviest", "more heavy"], answer: 0 },
+    { skill: "리딩", prompt: "Why did Minho turn off the computer?", passage: "Minho finished his homework on the computer. He turned it off to save energy.", options: ["To save energy", "To download a game", "To call his teacher", "To print a photo"], answer: 0 },
+    { skill: "리딩", prompt: "What happened after the students practiced?", passage: "The students practiced the song every afternoon. At the festival, they sang confidently.", options: ["They sang confidently.", "They canceled the festival.", "They forgot the song.", "They left the stage early."], answer: 0 },
+  ],
+  "middle-1": [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. My brother enjoys ___ basketball.", options: ["playing", "play", "to played", "plays"], answer: 0 },
+    { skill: "문법", prompt: "어법상 올바른 문장을 고르세요.", options: ["She was tired, so she went to bed early.", "She tired, so went bed early.", "She was tired because she go early.", "She is tired yesterday."], answer: 0 },
+    { skill: "리딩", prompt: "Why did Joon return to the classroom?", passage: "Joon noticed that his notebook was missing. He remembered leaving it under his desk, so he returned to the classroom.", options: ["To get his notebook", "To meet a new teacher", "To open a window", "To finish lunch"], answer: 0 },
+    { skill: "리딩", prompt: "What is the main idea?", passage: "Keeping a short daily journal helps learners notice what they understand and what they still need to practice.", options: ["A journal can guide daily learning.", "Writing always takes too much time.", "Practice is unnecessary.", "Learners should avoid reviewing."], answer: 0 },
+  ],
+  "middle-2": [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. If it rains tomorrow, we ___ indoors.", options: ["will stay", "stayed", "stay yesterday", "would stayed"], answer: 0 },
+    { skill: "문법", prompt: "어법상 올바른 문장을 고르세요.", options: ["The book that I borrowed was interesting.", "The book who I borrowed were interesting.", "The book I borrowing was interest.", "The book that borrowed me interesting."], answer: 0 },
+    { skill: "리딩", prompt: "What helped the class reduce waste?", passage: "The class placed separate bins for paper and plastic. Clear labels helped everyone put items in the right bin.", options: ["Clearly labeled recycling bins", "Buying more plastic", "Removing every bin", "Using paper only once"], answer: 0 },
+    { skill: "리딩", prompt: "What can be inferred?", passage: "Mina divided her large project into small tasks and completed one task each day. She finished before the deadline without rushing.", options: ["Small steps made the project manageable.", "The deadline was canceled.", "She completed everything in one night.", "Planning slowed her progress."], answer: 0 },
+  ],
+  "middle-3": [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. The window ___ before the storm arrived.", options: ["had been closed", "has close", "was closing it", "closed had"], answer: 0 },
+    { skill: "문법", prompt: "어법상 올바른 문장을 고르세요.", options: ["Not only did she apologize, but she also fixed the mistake.", "Not only she apologized, but fixed also.", "Not only did apologize she, but fixes it.", "She not only did apologized the mistake."], answer: 0 },
+    { skill: "리딩", prompt: "What is the author's purpose?", passage: "Before accepting a dramatic headline, readers should check the full article, its source, and the evidence it provides.", options: ["To encourage careful evaluation of news", "To promote dramatic headlines", "To discourage all online reading", "To replace evidence with opinions"], answer: 0 },
+    { skill: "리딩", prompt: "What can be inferred about the team?", passage: "The team tested three designs. Although the first two failed, each result showed them what to change in the final design.", options: ["They learned from unsuccessful attempts.", "They used only their first idea.", "They refused to test the design.", "They ignored every result."], answer: 0 },
+  ],
+  high: [
+    { skill: "문법", prompt: "빈칸에 알맞은 말을 고르세요. Rarely ___ such a thoughtful response.", options: ["have I seen", "I have seen", "did I saw", "I seeing"], answer: 0 },
+    { skill: "문법", prompt: "어법상 올바른 문장을 고르세요.", options: ["Were the evidence stronger, the conclusion would be more convincing.", "Was the evidence stronger, the conclusion will convincing.", "Were stronger the evidence, the conclusion is convinced.", "The evidence were strong would convince."], answer: 0 },
+    { skill: "리딩", prompt: "What is the central idea?", passage: "Abundant information does not automatically produce sound judgment. People must compare sources, test assumptions, and revise conclusions when new evidence appears.", options: ["Good judgment requires active evaluation.", "More information always guarantees accuracy.", "Assumptions should never be questioned.", "Conclusions must remain unchanged."], answer: 0 },
+    { skill: "리딩", prompt: "What does the author imply?", passage: "A policy may improve an average outcome while leaving some groups worse off. An average alone therefore cannot show how benefits and costs are distributed.", options: ["Distribution matters when evaluating policy.", "Average results reveal every individual effect.", "Policies never create unequal outcomes.", "Costs should be excluded from evaluation."], answer: 0 },
+  ],
+};
+
+// 초등 저학년은 하루에 영역별 3문항을 사용하므로, 소수의 정적 문항만으로는
+// 며칠 뒤 같은 문장이 다시 나올 수 있습니다. 아래 전용 은행은 검수된 단어와
+// 문장 틀을 조합해 듣기 96개, 단어 96개, 리딩 120개의 고유 문항을 만듭니다.
+// 같은 원문 문항은 각 영역의 전체 은행이 한 바퀴 돌기 전에는 재사용되지 않습니다.
+const elementaryLowVocabulary = [
+  ["apple", "사과"], ["bread", "빵"], ["water", "물"], ["milk", "우유"],
+  ["juice", "주스"], ["rice", "밥"], ["egg", "달걀"], ["cheese", "치즈"],
+  ["book", "책"], ["pencil", "연필"], ["eraser", "지우개"], ["ruler", "자"],
+  ["notebook", "공책"], ["desk", "책상"], ["chair", "의자"], ["window", "창문"],
+  ["school", "학교"], ["library", "도서관"], ["park", "공원"], ["hospital", "병원"],
+  ["market", "시장"], ["garden", "정원"], ["kitchen", "부엌"], ["bedroom", "침실"],
+  ["dog", "강아지"], ["cat", "고양이"], ["rabbit", "토끼"], ["bird", "새"],
+  ["fish", "물고기"], ["turtle", "거북이"], ["horse", "말"], ["duck", "오리"],
+  ["happy", "행복한"], ["sad", "슬픈"], ["hungry", "배고픈"], ["thirsty", "목마른"],
+  ["small", "작은"], ["large", "큰"], ["fast", "빠른"], ["slow", "느린"],
+  ["sunny", "맑은"], ["rainy", "비가 오는"], ["cloudy", "흐린"], ["windy", "바람이 부는"],
+  ["morning", "아침"], ["evening", "저녁"], ["family", "가족"], ["friend", "친구"],
+] as const;
+
+const elementaryLowListeningActions = [
+  ["reads a book after school.", "방과 후에 책을 읽어요."],
+  ["drinks milk at breakfast.", "아침 식사 때 우유를 마셔요."],
+  ["plays soccer in the park.", "공원에서 축구를 해요."],
+  ["draws a picture at home.", "집에서 그림을 그려요."],
+  ["feeds the rabbit every morning.", "매일 아침 토끼에게 먹이를 줘요."],
+  ["rides a bike on Sunday.", "일요일에 자전거를 타요."],
+  ["helps Mom in the kitchen.", "부엌에서 엄마를 도와요."],
+  ["writes in a notebook before class.", "수업 전에 공책에 써요."],
+] as const;
+const elementaryLowNames = ["Mina", "Jisu", "Ben", "Tom", "Emma", "Lucy", "Eric", "Nari", "Sora", "Junho", "Yuna", "Alex"] as const;
+
+const elementaryLowReadingFacts = [
+  { sentence: "puts a lunch box in the blue bag before school.", prompt: "What is in the blue bag?", answer: "A lunch box", wrong: ["A soccer ball", "A toy car", "A storybook"] },
+  { sentence: "feeds a white rabbit every morning.", prompt: "What animal does the child feed?", answer: "A white rabbit", wrong: ["A brown dog", "A small bird", "A yellow duck"] },
+  { sentence: "wears red boots on rainy days.", prompt: "What does the child wear?", answer: "Red boots", wrong: ["A green hat", "Blue gloves", "A yellow coat"] },
+  { sentence: "takes the bus to school every day.", prompt: "How does the child go to school?", answer: "By bus", wrong: ["By bike", "On foot", "By train"] },
+  { sentence: "reads a comic book after dinner.", prompt: "What does the child read?", answer: "A comic book", wrong: ["A menu", "A map", "A letter"] },
+  { sentence: "plays tennis with Dad on Saturday.", prompt: "What sport does the child play?", answer: "Tennis", wrong: ["Baseball", "Basketball", "Soccer"] },
+  { sentence: "has two yellow pencils in the pencil case.", prompt: "How many yellow pencils are there?", answer: "Two", wrong: ["One", "Three", "Four"] },
+  { sentence: "drinks a glass of milk with breakfast.", prompt: "What does the child drink?", answer: "Milk", wrong: ["Water", "Juice", "Tea"] },
+  { sentence: "visits Grandma every Sunday afternoon.", prompt: "When does the child visit Grandma?", answer: "Sunday afternoon", wrong: ["Monday morning", "Friday evening", "Saturday morning"] },
+  { sentence: "keeps a toy robot on the desk.", prompt: "Where is the toy robot?", answer: "On the desk", wrong: ["Under the bed", "In the bag", "By the door"] },
+] as const;
+
+function circularChoices(values: readonly string[], correctIndex: number) {
+  return [values[correctIndex], values[(correctIndex + 1) % values.length], values[(correctIndex + 2) % values.length], values[(correctIndex + 3) % values.length]];
+}
+
+const elementaryLowExpandedQuestions: Question[] = [
+  ...elementaryLowVocabulary.flatMap(([english, korean], index) => {
+    const englishWords = elementaryLowVocabulary.map(([word]) => word);
+    const koreanWords = elementaryLowVocabulary.map(([, meaning]) => meaning);
+    return [
+      { skill: "단어" as const, prompt: `‘${korean}’에 해당하는 영어 단어는?`, options: circularChoices(englishWords, index), answer: 0 },
+      { skill: "단어" as const, prompt: `영어 단어 ‘${english}’의 뜻은?`, options: circularChoices(koreanWords, index), answer: 0 },
+    ];
+  }),
+  ...elementaryLowNames.flatMap((name) => elementaryLowListeningActions.map(([action, meaning], actionIndex) => ({
+    skill: "듣기" as const,
+    prompt: `${name}가 하는 일을 고르세요.`,
+    audio: `${name} ${action}`,
+    options: circularChoices(elementaryLowListeningActions.map(([, label]) => label), actionIndex),
+    answer: 0,
+  }))),
+  ...elementaryLowNames.flatMap((name) => elementaryLowReadingFacts.map((fact) => ({
+    skill: "리딩" as const,
+    prompt: fact.prompt,
+    passage: `${name} ${fact.sentence}`,
+    options: [fact.answer, ...fact.wrong],
+    answer: 0,
+  }))),
+];
+
+type GeneratedBand = "elementary" | "middle" | "high";
+type GeneratedActivity = { base: string; third: string; past: string; ing: string; ko: string };
+
+const generatedActivities: Record<GeneratedBand, GeneratedActivity[]> = {
+  elementary: [
+    { base: "read a story", third: "reads a story", past: "read a story", ing: "reading a story", ko: "이야기책 읽기" },
+    { base: "play badminton", third: "plays badminton", past: "played badminton", ing: "playing badminton", ko: "배드민턴 치기" },
+    { base: "wash the dishes", third: "washes the dishes", past: "washed the dishes", ing: "washing the dishes", ko: "설거지하기" },
+    { base: "visit the library", third: "visits the library", past: "visited the library", ing: "visiting the library", ko: "도서관 방문하기" },
+    { base: "help the family", third: "helps the family", past: "helped the family", ing: "helping the family", ko: "가족 돕기" },
+    { base: "draw a picture", third: "draws a picture", past: "drew a picture", ing: "drawing a picture", ko: "그림 그리기" },
+    { base: "ride a bicycle", third: "rides a bicycle", past: "rode a bicycle", ing: "riding a bicycle", ko: "자전거 타기" },
+    { base: "clean the room", third: "cleans the room", past: "cleaned the room", ing: "cleaning the room", ko: "방 청소하기" },
+    { base: "practice the piano", third: "practices the piano", past: "practiced the piano", ing: "practicing the piano", ko: "피아노 연습하기" },
+    { base: "pack a school bag", third: "packs a school bag", past: "packed a school bag", ing: "packing a school bag", ko: "책가방 챙기기" },
+    { base: "water the plants", third: "waters the plants", past: "watered the plants", ing: "watering the plants", ko: "식물에 물 주기" },
+    { base: "feed the puppy", third: "feeds the puppy", past: "fed the puppy", ing: "feeding the puppy", ko: "강아지에게 먹이 주기" },
+    { base: "make a sandwich", third: "makes a sandwich", past: "made a sandwich", ing: "making a sandwich", ko: "샌드위치 만들기" },
+    { base: "write a letter", third: "writes a letter", past: "wrote a letter", ing: "writing a letter", ko: "편지 쓰기" },
+    { base: "collect leaves", third: "collects leaves", past: "collected leaves", ing: "collecting leaves", ko: "나뭇잎 모으기" },
+    { base: "practice English", third: "practices English", past: "practiced English", ing: "practicing English", ko: "영어 연습하기" },
+  ],
+  middle: [
+    { base: "organize a study plan", third: "organizes a study plan", past: "organized a study plan", ing: "organizing a study plan", ko: "학습 계획 정리하기" },
+    { base: "prepare a presentation", third: "prepares a presentation", past: "prepared a presentation", ing: "preparing a presentation", ko: "발표 준비하기" },
+    { base: "compare two solutions", third: "compares two solutions", past: "compared two solutions", ing: "comparing two solutions", ko: "두 해결책 비교하기" },
+    { base: "review the science notes", third: "reviews the science notes", past: "reviewed the science notes", ing: "reviewing the science notes", ko: "과학 노트 복습하기" },
+    { base: "join a volunteer project", third: "joins a volunteer project", past: "joined a volunteer project", ing: "joining a volunteer project", ko: "봉사 프로젝트 참여하기" },
+    { base: "solve a difficult puzzle", third: "solves a difficult puzzle", past: "solved a difficult puzzle", ing: "solving a difficult puzzle", ko: "어려운 퍼즐 풀기" },
+    { base: "practice a short speech", third: "practices a short speech", past: "practiced a short speech", ing: "practicing a short speech", ko: "짧은 연설 연습하기" },
+    { base: "research an environmental issue", third: "researches an environmental issue", past: "researched an environmental issue", ing: "researching an environmental issue", ko: "환경 문제 조사하기" },
+    { base: "repair a broken chair", third: "repairs a broken chair", past: "repaired a broken chair", ing: "repairing a broken chair", ko: "부서진 의자 수리하기" },
+    { base: "record the experiment results", third: "records the experiment results", past: "recorded the experiment results", ing: "recording the experiment results", ko: "실험 결과 기록하기" },
+    { base: "design a class poster", third: "designs a class poster", past: "designed a class poster", ing: "designing a class poster", ko: "학급 포스터 디자인하기" },
+    { base: "interview a local artist", third: "interviews a local artist", past: "interviewed a local artist", ing: "interviewing a local artist", ko: "지역 예술가 인터뷰하기" },
+    { base: "summarize a news article", third: "summarizes a news article", past: "summarized a news article", ing: "summarizing a news article", ko: "뉴스 기사 요약하기" },
+    { base: "measure the plant growth", third: "measures the plant growth", past: "measured the plant growth", ing: "measuring the plant growth", ko: "식물 성장 측정하기" },
+    { base: "explain the team decision", third: "explains the team decision", past: "explained the team decision", ing: "explaining the team decision", ko: "팀 결정 설명하기" },
+    { base: "create a reading journal", third: "creates a reading journal", past: "created a reading journal", ing: "creating a reading journal", ko: "독서 일지 만들기" },
+  ],
+  high: [
+    { base: "analyze the evidence", third: "analyzes the evidence", past: "analyzed the evidence", ing: "analyzing the evidence", ko: "근거 분석하기" },
+    { base: "evaluate the proposal", third: "evaluates the proposal", past: "evaluated the proposal", ing: "evaluating the proposal", ko: "제안 평가하기" },
+    { base: "revise the hypothesis", third: "revises the hypothesis", past: "revised the hypothesis", ing: "revising the hypothesis", ko: "가설 수정하기" },
+    { base: "interpret the data", third: "interprets the data", past: "interpreted the data", ing: "interpreting the data", ko: "자료 해석하기" },
+    { base: "compare the sources", third: "compares the sources", past: "compared the sources", ing: "comparing the sources", ko: "자료 출처 비교하기" },
+    { base: "challenge the assumption", third: "challenges the assumption", past: "challenged the assumption", ing: "challenging the assumption", ko: "가정에 의문 제기하기" },
+    { base: "synthesize the findings", third: "synthesizes the findings", past: "synthesized the findings", ing: "synthesizing the findings", ko: "연구 결과 종합하기" },
+    { base: "verify the claim", third: "verifies the claim", past: "verified the claim", ing: "verifying the claim", ko: "주장 검증하기" },
+    { base: "assess the consequences", third: "assesses the consequences", past: "assessed the consequences", ing: "assessing the consequences", ko: "결과 평가하기" },
+    { base: "formulate a solution", third: "formulates a solution", past: "formulated a solution", ing: "formulating a solution", ko: "해결책 구상하기" },
+    { base: "examine the pattern", third: "examines the pattern", past: "examined the pattern", ing: "examining the pattern", ko: "패턴 검토하기" },
+    { base: "justify the conclusion", third: "justifies the conclusion", past: "justified the conclusion", ing: "justifying the conclusion", ko: "결론 정당화하기" },
+    { base: "identify a limitation", third: "identifies a limitation", past: "identified a limitation", ing: "identifying a limitation", ko: "한계점 파악하기" },
+    { base: "consider an alternative", third: "considers an alternative", past: "considered an alternative", ing: "considering an alternative", ko: "대안 고려하기" },
+    { base: "predict the long-term effect", third: "predicts the long-term effect", past: "predicted the long-term effect", ing: "predicting the long-term effect", ko: "장기 효과 예측하기" },
+    { base: "defend a position", third: "defends a position", past: "defended a position", ing: "defending a position", ko: "입장 논증하기" },
+  ],
+};
+
+const generatedTimes = ["this morning", "after lunch", "after school", "before dinner", "this evening", "on Monday", "on Tuesday", "on Wednesday", "on Thursday", "on Friday", "on Saturday", "on Sunday"];
+const generatedTimeKo = ["오늘 아침", "점심 식사 후", "방과 후", "저녁 식사 전", "오늘 저녁", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+const generatedExtraVocabulary: Record<GeneratedBand, Array<{ en: string; ko: string }>> = {
+  elementary: [
+    { en: "careful", ko: "조심스러운" }, { en: "favorite", ko: "가장 좋아하는" },
+    { en: "together", ko: "함께" }, { en: "usually", ko: "보통" },
+    { en: "different", ko: "다른" }, { en: "important", ko: "중요한" },
+    { en: "kind", ko: "친절한" }, { en: "quiet", ko: "조용한" },
+    { en: "early", ko: "일찍" }, { en: "excited", ko: "신이 난" },
+    { en: "borrow", ko: "빌리다" }, { en: "return", ko: "돌려주다" },
+    { en: "choose", ko: "선택하다" }, { en: "remember", ko: "기억하다" },
+    { en: "invite", ko: "초대하다" }, { en: "arrive", ko: "도착하다" },
+  ],
+  middle: [
+    { en: "participate", ko: "참여하다" }, { en: "available", ko: "이용 가능한" },
+    { en: "reduce", ko: "줄이다" }, { en: "solution", ko: "해결책" },
+    { en: "responsible", ko: "책임감 있는" }, { en: "opportunity", ko: "기회" },
+    { en: "concentrate", ko: "집중하다" }, { en: "recommend", ko: "추천하다" },
+    { en: "improve", ko: "향상시키다" }, { en: "prevent", ko: "예방하다" },
+    { en: "efficient", ko: "효율적인" }, { en: "environment", ko: "환경" },
+    { en: "influence", ko: "영향을 미치다" }, { en: "benefit", ko: "이점" },
+    { en: "maintain", ko: "유지하다" }, { en: "require", ko: "요구하다" },
+  ],
+  high: [
+    { en: "substantial", ko: "상당한" }, { en: "inevitable", ko: "피할 수 없는" },
+    { en: "ambiguous", ko: "모호한" }, { en: "plausible", ko: "그럴듯한" },
+    { en: "undermine", ko: "약화시키다" }, { en: "reinforce", ko: "강화하다" },
+    { en: "comprehensive", ko: "포괄적인" }, { en: "valid", ko: "타당한" },
+    { en: "contradict", ko: "모순되다" }, { en: "derive", ko: "도출하다" },
+    { en: "allocate", ko: "할당하다" }, { en: "distort", ko: "왜곡하다" },
+    { en: "conventional", ko: "관습적인" }, { en: "tentative", ko: "잠정적인" },
+    { en: "explicit", ko: "명백한" }, { en: "coherent", ko: "일관성 있는" },
+  ],
+};
+
+function generatedBandFor(level: BankLevelId): GeneratedBand {
+  if (level.startsWith("elementary")) return "elementary";
+  return level.startsWith("middle") ? "middle" : "high";
+}
+
+function grammarQuestion(level: BankLevelId, name: string, activity: GeneratedActivity, index: number): Question {
+  const mode = index % 6;
+  if (level.startsWith("elementary")) {
+    if (mode === 0) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name} ___ every day.`, options: [activity.third, activity.base, activity.ing, activity.past], answer: 0 };
+    if (mode === 1) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name} is ___ now.`, options: [activity.ing, activity.base, activity.past, activity.third], answer: 0 };
+    if (mode === 2) return { skill: "문법", prompt: `어제 한 일을 나타내는 문장을 고르세요.`, options: [`${name} ${activity.past} yesterday.`, `${name} ${activity.third} yesterday.`, `${name} is ${activity.base} yesterday.`, `${name} ${activity.ing} yesterday.`], answer: 0 };
+    if (mode === 3) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name} wants to ___.`, options: [activity.base, activity.third, activity.past, activity.ing], answer: 0 };
+    if (mode === 4) return { skill: "문법", prompt: `올바른 미래 표현을 고르세요.`, options: [`${name} will ${activity.base} tomorrow.`, `${name} will ${activity.past} tomorrow.`, `${name} will ${activity.ing} tomorrow.`, `${name} wills ${activity.base} tomorrow.`], answer: 0 };
+    return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. Does ${name} ___ on Sunday?`, options: [activity.base, activity.third, activity.past, activity.ing], answer: 0 };
+  }
+  if (level.startsWith("middle")) {
+    if (mode === 0) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name} ___ yesterday.`, options: [activity.past, activity.third, activity.base, activity.ing], answer: 0 };
+    if (mode === 1) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name} is interested in ___.`, options: [activity.ing, activity.base, activity.past, activity.third], answer: 0 };
+    if (mode === 2) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. If ${name} has time, ${name} will ___.`, options: [activity.base, activity.past, activity.ing, activity.third], answer: 0 };
+    if (mode === 3) return { skill: "문법", prompt: `어법상 올바른 문장을 고르세요.`, options: [`${name} decided to ${activity.base}.`, `${name} decided ${activity.past}.`, `${name} decided to ${activity.ing}.`, `${name} deciding to ${activity.base}.`], answer: 0 };
+    if (mode === 4) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. While ${name} was ___, the teacher arrived.`, options: [activity.ing, activity.base, activity.past, activity.third], answer: 0 };
+    return { skill: "문법", prompt: `올바른 의문문을 고르세요.`, options: [`Did ${name} ${activity.base}?`, `Did ${name} ${activity.past}?`, `Does ${name} ${activity.past}?`, `Was ${name} ${activity.base}?`], answer: 0 };
+  }
+  if (mode === 0) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. Only after the discussion did ${name} ___.`, options: [activity.base, activity.past, activity.third, activity.ing], answer: 0 };
+  if (mode === 1) return { skill: "문법", prompt: `어법상 올바른 문장을 고르세요.`, options: [`Had ${name} had more time, ${name} would have ${activity.past}.`, `Had ${name} more time, ${name} will ${activity.past}.`, `${name} had more time would have ${activity.base}.`, `If had ${name} time, ${name} would ${activity.past}.`], answer: 0 };
+  if (mode === 2) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. It was essential that ${name} ___.`, options: [activity.base, activity.third, activity.past, activity.ing], answer: 0 };
+  if (mode === 3) return { skill: "문법", prompt: `도치 구문으로 올바른 문장을 고르세요.`, options: [`Not until noon did ${name} ${activity.base}.`, `Not until noon ${name} ${activity.past}.`, `Not until did noon ${name} ${activity.base}.`, `Not noon until ${name} did ${activity.past}.`], answer: 0 };
+  if (mode === 4) return { skill: "문법", prompt: `빈칸에 알맞은 말을 고르세요. ${name}, having finished the first task, began ___.`, options: [activity.ing, activity.base, activity.past, activity.third], answer: 0 };
+  return { skill: "문법", prompt: `어법상 올바른 문장을 고르세요.`, options: [`What ${name} did was ${activity.base}.`, `What did ${name} was ${activity.past}.`, `What ${name} did were ${activity.ing}.`, `${name} what did was ${activity.base}.`], answer: 0 };
+}
+
+function buildExpandedQuestions(level: BankLevelId): Question[] {
+  if (level === "elementary-low") return [];
+  const band = generatedBandFor(level);
+  const activities = generatedActivities[band];
+  const listening = elementaryLowNames.flatMap((name, nameIndex) => activities.map((activity, activityIndex) => ({
+    skill: "듣기" as const,
+    prompt: level.startsWith("elementary") ? `${name}가 할 일을 고르세요.` : "화자가 말한 계획을 고르세요.",
+    audio: band === "high" ? `After considering the available options, ${name} decided to ${activity.base} ${generatedTimes[(nameIndex + activityIndex) % generatedTimes.length]}.` : `${name} will ${activity.base} ${generatedTimes[(nameIndex + activityIndex) % generatedTimes.length]}.`,
+    options: circularChoices(activities.map((item) => item.ko), activityIndex),
+    answer: 0,
+  })));
+  const grammar = elementaryLowNames.flatMap((name, nameIndex) => activities.map((activity, activityIndex) => grammarQuestion(level, name, activity, nameIndex + activityIndex)));
+  const vocabularyConcepts = [
+    ...activities.map((activity) => ({ en: activity.base, ko: activity.ko })),
+    ...generatedExtraVocabulary[band],
+  ];
+  const vocabulary = vocabularyConcepts.map((concept, index) => ({
+    skill: "단어" as const,
+    prompt: `‘${concept.ko}’와 가장 가까운 영어 표현은?`,
+    options: circularChoices(vocabularyConcepts.map((item) => item.en), index),
+    answer: 0,
+  }));
+  const reading = elementaryLowNames.flatMap((name, nameIndex) => activities.map((activity, activityIndex) => {
+    const originalTime = (nameIndex + activityIndex) % generatedTimes.length;
+    const changedTime = (originalTime + 3 + (activityIndex % 4)) % generatedTimes.length;
+    const passage = band === "elementary"
+      ? `${name} wants to ${activity.base}. The plan was for ${generatedTimes[originalTime]}, but it changed to ${generatedTimes[changedTime]}.`
+      : band === "middle"
+        ? `${name} planned to ${activity.base} ${generatedTimes[originalTime]}. Because another class was added, the plan was moved to ${generatedTimes[changedTime]}.`
+        : `Although ${name} had initially intended to ${activity.base} ${generatedTimes[originalTime]}, an unexpected schedule conflict required the task to be postponed until ${generatedTimes[changedTime]}.`;
+    return {
+      skill: "리딩" as const,
+      prompt: band === "high" ? "When will the task most likely take place?" : `When will ${name} ${activity.base}?`,
+      passage,
+      options: circularChoices(generatedTimeKo, changedTime),
+      answer: 0,
+    };
+  }));
+  return [...listening, ...grammar, ...vocabulary, ...reading];
+}
+
+const expandedQuestionsByLevel = Object.fromEntries(
+  (["elementary-low", "elementary-mid", "elementary-high", "middle-1", "middle-2", "middle-3", "high"] as BankLevelId[])
+    .map((level) => [level, buildExpandedQuestions(level)]),
+) as Record<BankLevelId, Question[]>;
+
 function dateKey() {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
 }
@@ -412,7 +722,10 @@ function seededShuffle<T>(items: T[], seedValue: string) {
 
 function daySerial(today: string, attempt = 0) {
   const [year, month, day] = today.split("-").map(Number);
-  return (Math.floor(Date.UTC(year, month - 1, day) / 86400000) * 100000) + attempt;
+  // Advance exactly one question block per calendar day. The previous
+  // `day * 100000` value often became a multiple of middle-school pool sizes,
+  // so the modulo operation returned the same starting question every day.
+  return Math.floor(Date.UTC(year, month - 1, day) / 86400000) + attempt;
 }
 
 function rotateOptions(question: Question, seedValue: string) {
@@ -427,30 +740,145 @@ function rotateOptions(question: Question, seedValue: string) {
 
 const dailyMissionThemes = ["학교생활", "친구와 대화", "과학 탐구", "환경 보호", "건강 습관", "여행", "문화", "디지털 생활", "스포츠", "진로", "독서", "일상생활"];
 const dailyMissionModes = ["핵심 찾기", "문맥 추론", "실전 적용", "개념 확인"];
+const dailyMissionFrames = [
+  "핵심 단서를 먼저 찾고 해결하세요.",
+  "문장 전체의 흐름을 확인한 뒤 답하세요.",
+  "정답의 근거가 되는 표현을 찾아보세요.",
+  "비슷해 보이는 오답의 차이를 구별하세요.",
+  "배운 규칙을 새로운 상황에 적용해 보세요.",
+  "앞뒤 문맥을 연결하여 가장 자연스러운 답을 고르세요.",
+  "문장의 목적과 상황을 함께 생각해 보세요.",
+  "한 번 더 검토하며 정확한 근거를 선택하세요.",
+];
 
-function applyDailyVariant(question: Question, _seedValue: string, variantIndex: number) {
+// A source item can only return after every item in its skill pool has been
+// used. When it eventually returns, rotate every matching context token across
+// the prompt, passage, audio, and choices together. This keeps the answer
+// relationship intact while producing a genuinely different situation rather
+// than merely shuffling the same four choices.
+const coherentVariantGroups = [
+  ["Kevin", "Daniel", "Eric", "Ben", "Tom", "Alex", "David", "Minsu"],
+  ["Mina", "Ella", "Nari", "Sora", "Emma", "Sarah", "Julia", "Lucy"],
+  ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+  ["library", "classroom", "gym", "park", "museum", "cafeteria", "community center", "science room"],
+  ["morning", "afternoon", "evening"],
+  ["project", "assignment", "presentation", "report"],
+  ["students", "learners", "club members", "classmates"],
+];
+
+type BilingualConcept = { en: string; ko: string; koNoun?: string };
+const elementaryConceptGroups: BilingualConcept[][] = [
+  [
+    { en: "apple", ko: "사과" },
+    { en: "milk", ko: "우유" },
+    { en: "water", ko: "물" },
+    { en: "juice", ko: "주스" },
+  ],
+  [
+    { en: "book", ko: "책" },
+    { en: "pencil", ko: "연필" },
+    { en: "bag", ko: "가방" },
+    { en: "ball", ko: "공" },
+  ],
+  [
+    { en: "dog", ko: "강아지" },
+    { en: "cat", ko: "고양이" },
+    { en: "bird", ko: "새" },
+    { en: "rabbit", ko: "토끼" },
+  ],
+  [
+    { en: "school", ko: "학교" },
+    { en: "park", ko: "공원" },
+    { en: "library", ko: "도서관" },
+    { en: "museum", ko: "박물관" },
+  ],
+  [
+    { en: "red", ko: "빨간", koNoun: "빨간색" },
+    { en: "blue", ko: "파란", koNoun: "파란색" },
+    { en: "green", ko: "초록", koNoun: "초록색" },
+    { en: "yellow", ko: "노란", koNoun: "노란색" },
+  ],
+];
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function rotateContext(value: string | undefined, variantIndex: number, seedValue: string) {
+  if (!value) return value;
+  return coherentVariantGroups.reduce((result, group, groupIndex) => {
+    const offset = 1 + (hashSeed(`${seedValue}-${groupIndex}-${variantIndex}`) % (group.length - 1));
+    const pattern = new RegExp(`\\b(${group.map(escapeRegExp).sort((a, b) => b.length - a.length).join("|")})\\b`, "g");
+    return result.replace(pattern, (match) => {
+      const index = group.indexOf(match);
+      return index < 0 ? match : group[(index + offset) % group.length];
+    });
+  }, value);
+}
+
+function rotateElementaryConcepts(value: string | undefined, variantIndex: number, seedValue: string) {
+  if (!value || !seedValue.startsWith("elementary-")) return value;
+  return elementaryConceptGroups.reduce((result, group, groupIndex) => {
+    const offset = 1 + (hashSeed(`${seedValue}-elementary-${groupIndex}-${variantIndex}`) % (group.length - 1));
+    const tokenOwners = new Map<string, { conceptIndex: number; form: "en" | "ko" | "koNoun" }>();
+    group.forEach((concept, conceptIndex) => {
+      tokenOwners.set(concept.en, { conceptIndex, form: "en" });
+      tokenOwners.set(concept.ko, { conceptIndex, form: "ko" });
+      if (concept.koNoun) tokenOwners.set(concept.koNoun, { conceptIndex, form: "koNoun" });
+    });
+    const tokens = [...tokenOwners.keys()].sort((a, b) => b.length - a.length);
+    const pattern = new RegExp(tokens.map((token) => /^[a-z]+$/i.test(token) ? `\\b${escapeRegExp(token)}\\b` : escapeRegExp(token)).join("|"), "gi");
+    return result.replace(pattern, (match) => {
+      const owner = tokenOwners.get(match.toLowerCase()) ?? tokenOwners.get(match);
+      if (!owner) return match;
+      const target = group[(owner.conceptIndex + offset) % group.length];
+      if (owner.form === "koNoun") return target.koNoun ?? `${target.ko}색`;
+      if (owner.form === "ko") return target.ko;
+      const replacement = target.en;
+      return match[0] === match[0]?.toUpperCase() ? `${replacement[0].toUpperCase()}${replacement.slice(1)}` : replacement;
+    });
+  }, value);
+}
+
+function applyDailyVariant(question: Question, seedValue: string, variantIndex: number) {
   const theme = dailyMissionThemes[variantIndex % dailyMissionThemes.length];
   const mode = dailyMissionModes[Math.floor(variantIndex / dailyMissionThemes.length) % dailyMissionModes.length];
+  const frame = dailyMissionFrames[variantIndex % dailyMissionFrames.length];
 
-  // Never rewrite words inside the passage, audio, or choices. Replacing a
-  // colour, number, person, place, or object in only part of a question can
-  // remove the correct answer from the choices (for example orange vs. Red).
-  // Variety comes from the question bank and selection order instead.
+  // 문제 안의 낱말을 기계적으로 바꾸면 한국어 조사(을/를, 이/가)가
+  // 틀리거나 장소와 행동이 맞지 않는 문장이 생길 수 있습니다. 매일 다른
+  // 문항은 날짜별 순환으로 선택하고, 검수된 원문·음원·정답 관계는 그대로
+  // 보존합니다. 안내 문구와 보기 순서만 날짜 씨드에 따라 달라집니다.
   return {
     ...question,
-    prompt: `[${theme} · ${mode}] ${question.prompt}`,
-    options: [...question.options],
+    prompt: `[${theme} · ${mode}] ${frame} ${question.prompt}`,
   };
 }
 
+function isValidQuestion(question: Question) {
+  return question.options.length === 4
+    && question.answer >= 0
+    && question.answer < question.options.length
+    && new Set(question.options.map((option) => option.trim())).size === question.options.length
+    && Boolean(question.prompt.trim());
+}
+
+function questionSignature(question: Question) {
+  return [question.skill, question.prompt, question.audio ?? "", question.passage ?? ""].join("|").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function takeWithoutRepeating(pool: Question[], count: number, serial: number, seedValue: string) {
-  if (!pool.length) return [];
+  const validPool = [...new Map(pool.filter(isValidQuestion).map((question) => [questionSignature(question), question])).values()];
+  if (!validPool.length) return [];
   // Use one stable order as a circular queue. Consecutive attempts advance by
   // exactly `count`, so no source question can reappear until every question
   // for that skill has been used once.
-  const orderedPool = seededShuffle(pool, `${seedValue}-base-order`);
+  const orderedPool = seededShuffle(validPool, `${seedValue}-base-order`);
   const chosen: Question[] = [];
-  for (let slot = 0; slot < Math.min(count, pool.length); slot += 1) {
+  // Always return the requested number of items. When a small legacy pool has
+  // fewer items, continue through the next variant cycle instead of silently
+  // shortening the test.
+  for (let slot = 0; slot < count; slot += 1) {
     const absoluteIndex = serial * count + slot;
     const cycle = Math.floor(absoluteIndex / orderedPool.length);
     const question = orderedPool[absoluteIndex % orderedPool.length];
@@ -463,19 +891,28 @@ function takeWithoutRepeating(pool: Question[], count: number, serial: number, s
 
 function seededQuestions(levelId: LevelId, today: string, attempt: number) {
   const bankLevel: BankLevelId = levelId.startsWith("high-") ? "high" : levelId as BankLevelId;
-  const difficultyPool = levelId.startsWith("high-") ? highDifficultyQuestions[levelId as keyof typeof highDifficultyQuestions] : [];
-  const pool = [...dailySets[bankLevel].flatMap((set) => set.questions), ...extraQuestions[bankLevel], ...additionalListeningQuestions[bankLevel], ...(grammarQuestions[bankLevel] ?? []), ...supplementaryQuestions[bankLevel], ...difficultyPool];
+  // 고등 문제의 변별력은 유지하되 고난도 전용 문항 비중을 절반으로 낮춰
+  // 매일 학습용 테스트가 과도하게 어렵지 않도록 조정합니다.
+  const difficultyPool = levelId.startsWith("high-")
+    ? highDifficultyQuestions[levelId as keyof typeof highDifficultyQuestions]
+    : [];
+  const pool = [...dailySets[bankLevel].flatMap((set) => set.questions), ...extraQuestions[bankLevel], ...additionalListeningQuestions[bankLevel], ...(grammarQuestions[bankLevel] ?? []), ...supplementaryQuestions[bankLevel], ...antiRepeatQuestions[bankLevel], ...(bankLevel === "elementary-low" ? elementaryLowExpandedQuestions : expandedQuestionsByLevel[bankLevel]), ...difficultyPool];
   const serial = daySerial(today, attempt);
   const promptVersion = hashSeed(DAILY_MINI_TEST_AUTHORING_PROMPT);
-  const skills: Question["skill"][] = ["듣기", "단어", "문법", "리딩"];
-  const selected = skills.flatMap((skill) =>
-    takeWithoutRepeating(
-      pool.filter((question) => question.skill === skill),
-      3,
-      serial,
-      `${levelId}-${skill}-${promptVersion}`,
-    ),
-  );
+  // 초등 저학년은 부담을 낮춘 9문항(듣기·단어·리딩 각 3문항),
+  // 나머지 과정은 12문항(Listening 4 + Grammar 4 + Reading 4)으로 고정합니다.
+  const selected = levelId === "elementary-low"
+    ? [
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 3, serial, `${levelId}-듣기-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 3, serial, `${levelId}-단어-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩-${promptVersion}`),
+      ]
+    : [
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 4, serial, `${levelId}-듣기-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "문법"), 4, serial, `${levelId}-문법-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 1, serial, `${levelId}-리딩문맥어휘-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩독해-${promptVersion}`),
+      ];
   return seededShuffle(selected, `${today}-${attempt}-${levelId}-${promptVersion}-question-order`);
 }
 
@@ -496,6 +933,7 @@ export function DailyMiniTest() {
   const [resultSaving, setResultSaving] = useState(false);
   const [resultConsent, setResultConsent] = useState(false);
   const audioPlayer = useRef<HTMLAudioElement | null>(null);
+  const audioElements = useRef<Record<number, HTMLAudioElement | null>>({});
   const today = dateKey();
   const questions = useMemo(() => seededQuestions(levelId, today, attemptSerial), [levelId, today, attemptSerial]);
   const level = levels.find((item) => item.id === levelId) ?? levels[0];
@@ -541,31 +979,50 @@ export function DailyMiniTest() {
     setResultConsent(false);
   }
 
-  async function playAudio(text: string) {
+  async function playAudio(text: string, questionIndex?: number) {
     const source = audioSources[text];
-    if (!source) {
-      if (!("speechSynthesis" in window)) return setShareMessage("이 기기에서는 듣기 재생을 지원하지 않습니다.");
+    const speakWithDevice = () => {
+      if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+        setShareMessage("음원을 재생하지 못했습니다. 인터넷 연결과 미디어 음량을 확인해 주세요.");
+        return;
+      }
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-US";
       utterance.rate = 0.82;
       utterance.onend = () => setShareMessage("듣기 재생이 끝났습니다. 필요하면 다시 들을 수 있습니다.");
+      utterance.onerror = () => setShareMessage("음원을 재생하지 못했습니다. 미디어 음량을 확인한 후 다시 눌러 주세요.");
       window.speechSynthesis.speak(utterance);
-      setShareMessage("오늘의 새로운 영어 문장을 재생하고 있습니다.");
-      return;
-    }
+      setShareMessage("영어 문장을 재생하고 있습니다. 휴대폰 미디어 음량을 확인해 주세요.");
+    };
+    const serverSource = `/api/tts?text=${encodeURIComponent(text.replace(/\s+/g, " ").trim())}`;
     try {
       audioPlayer.current?.pause();
-      const player = new Audio(source);
+      window.speechSynthesis?.cancel();
+      const player = questionIndex === undefined ? new Audio(source ?? serverSource) : audioElements.current[questionIndex] ?? new Audio(source ?? serverSource);
+      if (player.currentTime > 0) player.currentTime = 0;
       player.preload = "auto";
       player.volume = 1;
       audioPlayer.current = player;
       player.onended = () => setShareMessage("듣기 재생이 끝났습니다. 필요하면 다시 들을 수 있습니다.");
-      player.onerror = () => setShareMessage("음원을 불러오지 못했습니다. 인터넷 연결을 확인한 후 다시 눌러 주세요.");
+      player.onerror = () => {
+        audioPlayer.current = null;
+        if (source) {
+          const fallbackPlayer = new Audio(serverSource);
+          fallbackPlayer.preload = "auto";
+          fallbackPlayer.volume = 1;
+          audioPlayer.current = fallbackPlayer;
+          fallbackPlayer.onended = () => setShareMessage("듣기 재생이 끝났습니다. 필요하면 다시 들을 수 있습니다.");
+          fallbackPlayer.onerror = () => { audioPlayer.current = null; speakWithDevice(); };
+          void fallbackPlayer.play().catch(speakWithDevice);
+        } else {
+          speakWithDevice();
+        }
+      };
       await player.play();
       setShareMessage("영어 문장을 재생하고 있습니다. 휴대폰 미디어 음량을 확인해 주세요.");
     } catch {
-      setShareMessage("재생이 차단되었습니다. 휴대폰 무음 모드를 해제하고 듣기 버튼을 다시 눌러 주세요.");
+      speakWithDevice();
     }
   }
 
@@ -612,43 +1069,44 @@ ${compactAreas}
         reading: reading.correct, readingTotal: reading.total,
       }),
     });
+    const result = await response.json().catch(() => ({})) as { emailSent?: boolean; emailMessage?: string };
     if (!response.ok) {
       setResultSaving(false);
       return setShareMessage("결과 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     }
-    let emailSent = false;
-    try {
-      await sendTestEmailNotification({
-        email: content.notificationEmail,
-        kind: "DAILY 미니테스트",
-        studentName,
-        phone,
-        date: today,
-        level: level.label,
-        score,
-        total: questions.length,
-        details: `듣기 ${listening.correct}/${listening.total} · 단어 ${vocabulary.correct}/${vocabulary.total}${grammar.total ? ` · 문법 ${grammar.correct}/${grammar.total}` : ""} · 리딩 ${reading.correct}/${reading.total}`,
-      });
-      emailSent = true;
-    } catch {
-      // The test result remains stored even if the optional email service is delayed.
-    }
+    const emailSent = Boolean(result.emailSent);
+    const emailMessage = result.emailMessage;
     setResultSaving(false);
     setResultSaved(true);
-    setShareMessage(emailSent ? "결과가 저장되고 학원 카카오 이메일로 완료 알림을 전송했습니다." : "결과가 저장되었습니다. 이메일 알림이 지연되어 관리자페이지에서 바로 확인해 주세요.");
+    setShareMessage(emailSent
+      ? "결과가 저장되고 학원 카카오메일로 완료 알림을 전송했습니다."
+      : `결과는 저장됐지만 카카오메일 알림을 보내지 못했습니다. ${emailMessage || "관리자페이지에서 결과를 확인해 주세요."}`);
   }
 
-  async function shareKakao() {
+  function shareKakao() {
+    const kakao = window.Kakao;
+    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+    if (!kakaoKey) {
+      setShareMessage("카카오 디벨로퍼스 JavaScript 키 연결이 필요합니다.");
+      return;
+    }
+    if (!kakao) {
+      setShareMessage("카카오톡 공유 기능을 불러오는 중입니다. 잠시 후 다시 눌러 주세요.");
+      return;
+    }
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "DAILY 영어 미니테스트", text: shareText, url: "https://vercel-deploy-mauve-one-18.vercel.app/academy#daily-mini-test" });
-        setShareMessage("공유 화면에서 카카오톡을 선택해 전송하세요.");
-      } else {
-        await navigator.clipboard.writeText(shareText);
-        setShareMessage("내용을 복사했습니다. 카카오톡 채팅방에 붙여넣어 주세요.");
-      }
-    } catch {
-      setShareMessage("공유가 취소되었습니다.");
+      if (!kakao.isInitialized()) kakao.init(kakaoKey);
+      const landingUrl = "https://vercel-deploy-mauve-one-18.vercel.app/academy#daily-mini-test";
+      kakao.Share.sendDefault({
+        objectType: "text",
+        text: shareText.slice(0, 200),
+        link: { mobileWebUrl: landingUrl, webUrl: landingUrl },
+        buttonTitle: "벌교미래엔영어홈페이지보기",
+      });
+      setShareMessage("카카오톡에서 친구 또는 채팅방을 선택해 보내 주세요.");
+    } catch (error) {
+      console.error("Kakao Share failed", error);
+      setShareMessage("카카오톡 친구 선택창을 열지 못했습니다. 카카오 앱 설정을 확인해 주세요.");
     }
   }
 
@@ -667,7 +1125,7 @@ ${compactAreas}
           {questions.map((question, index) => (
             <article className={completed ? (answers[index] === question.answer ? "correct" : "wrong") : ""} key={`${levelId}-${today}-${index}`}>
               <div className="daily-question-top"><span>{question.skill}</span><b>0{index + 1}</b></div>
-              {question.audio && <button className="daily-audio" type="button" onClick={() => playAudio(question.audio!)}>▶ 영어 문장 듣기 <small>필요하면 다시 들으세요</small></button>}
+              {question.audio && <div className="daily-audio-wrap"><button className="daily-audio" type="button" onClick={() => playAudio(question.audio!, index)}>▶ 영어 문장 듣기 <small>필요하면 다시 들으세요</small></button><audio className="daily-audio-player" controls preload="metadata" ref={(element) => { audioElements.current[index] = element; }} src={audioSources[question.audio] ?? `/api/tts?text=${encodeURIComponent(question.audio.replace(/\s+/g, " ").trim())}`} onPlay={(event) => { if (audioPlayer.current && audioPlayer.current !== event.currentTarget) audioPlayer.current.pause(); audioPlayer.current = event.currentTarget; setShareMessage("영어 문장을 재생하고 있습니다. 휴대폰 미디어 음량을 확인해 주세요."); }} onEnded={() => setShareMessage("듣기 재생이 끝났습니다. 필요하면 다시 들을 수 있습니다.")} onError={() => setShareMessage("음원을 불러오지 못했습니다. 인터넷 연결을 확인한 후 다시 눌러 주세요.")}>영어 듣기 음원을 재생할 수 없습니다.</audio></div>}
               {question.passage && <p className="daily-passage">{question.passage}</p>}
               <h4>{question.prompt}</h4>
               <div className="daily-options">{question.options.map((option, optionIndex) => <button type="button" disabled={completed} className={answers[index] === optionIndex ? "selected" : ""} onClick={() => setAnswers((current) => ({ ...current, [index]: optionIndex }))} key={option}><span>{optionIndex + 1}</span>{option}</button>)}</div>
@@ -682,7 +1140,7 @@ ${compactAreas}
             <label className="daily-result-consent"><input type="checkbox" checked={resultConsent} onChange={(event) => setResultConsent(event.target.checked)} disabled={resultSaved} /><span>결과 저장, 상담 및 학원 이메일 완료 알림을 위한 개인정보 수집·이용에 동의합니다.</span></label>
             {!resultSaved && <p className="daily-save-note">휴대폰 번호를 끝까지 입력한 뒤 ‘결과 저장하기’를 눌러 주세요.</p>}
           </>}
-          <div className="daily-share"><button type="button" onClick={sendSms} disabled={!completed}>문자로 보내기</button><button type="button" onClick={shareKakao} disabled={!completed}>카카오톡으로 공유</button></div>
+          <div className="daily-share"><button type="button" onClick={sendSms} disabled={!completed}>문자로 보내기</button><button type="button" onClick={shareKakao} disabled={!completed}>카톡 보내기</button></div>
           {shareMessage && <p role="status">{shareMessage}</p>}
         </div>
       </div>

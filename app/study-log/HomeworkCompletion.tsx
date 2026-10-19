@@ -1,7 +1,7 @@
 "use client";
 import {FormEvent,useEffect,useState} from "react";
 type Item={id:number;homeworkDate:string;title:string;completedItems:string;studentNote:string;autoFeedback:string;emailSent:number};
-const choices=["본문 암기","단어·숙어","문법 문제","학교 프린트","서술형·영작","인강 시청","보충자료","오답노트"];
+const choices=["본문 암기","대화문 암기","단어·숙어","문법 문제","문제집 문제풀기","프린트 문제풀기","학교 프린트","교과서 외 지문 공부","서술형·영작","인강 시청","보충자료","오답노트"];
 const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Seoul"});
 export default function HomeworkCompletion(){
  const[logged,setLogged]=useState(false),[items,setItems]=useState<Item[]>([]),[checked,setChecked]=useState<string[]>([]),[title,setTitle]=useState(""),[homeworkDate,setHomeworkDate]=useState(today()),[studentNote,setStudentNote]=useState(""),[saving,setSaving]=useState(false),[message,setMessage]=useState(""),[feedback,setFeedback]=useState("");

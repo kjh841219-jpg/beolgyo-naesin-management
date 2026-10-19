@@ -5,6 +5,11 @@ import StudentStudyMaterials from "./StudentStudyMaterials";
 import StudentLearningLinks from "./StudentLearningLinks";
 import LearningResultUpload from "./LearningResultUpload";
 import HomeworkCompletion from "./HomeworkCompletion";
+import StudentRecordSaveComplete from "./StudentRecordSaveComplete";
+import StudyWeekStructure from "./StudyWeekStructure";
+import StudyExtraScores from "./StudyExtraScores";
+import StudentCumulativeRecords from "./StudentCumulativeRecords";
+import HomeworkSubmission from "./HomeworkSubmission";
 import "../learning-tools.css";
 import "./study-log.css";
 import "./study-dashboard.css";
@@ -14,6 +19,13 @@ import "./wrong-answer.css";
 import "./study-materials.css";
 import "./material-solving.css";
 import "./homework-completion.css";
+import "./homework-submission.css";
+import "./resource-submission.css";
+import "./assigned-video.css";
+import "./final-save.css";
+import "./study-week-structure.css";
+import "./study-extra-scores.css";
+import "./student-cumulative.css";
 
 export const metadata: Metadata = { title: "나의 내신 학습기록 | 벌교미래엔영어학원", description: "오늘 공부한 내용을 직접 확인하고 다음 학습을 계획하는 학생용 내신 학습기록표" };
-export default function StudyLogPage(){return <><StudentStudyLog/><HomeworkCompletion/><StudentLearningLinks/><StudentStudyMaterials/><LearningResultUpload/><WrongAnswerNotebook/></>}
+export default function StudyLogPage(){return <><StudentStudyLog/><StudyExtraScores/><StudyWeekStructure/><StudentCumulativeRecords/><HomeworkSubmission/><HomeworkCompletion/><StudentLearningLinks/><StudentStudyMaterials/><LearningResultUpload/><WrongAnswerNotebook/><StudentRecordSaveComplete/></>}

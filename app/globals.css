@@ -64,6 +64,8 @@ section { scroll-margin-top: 86px; }
 .compact-schedule button:hover { background: #57921f; }
 .compact-schedule button b { margin-left: 6px; }
 .compact-schedule > small { width: min(1236px, 100%); margin: 7px auto 0; display: block; color: #c9dfb4; font-size: 9px; text-align: right; }
+.compact-school-calendar-result { scroll-margin-top: 82px; }
+.compact-school-calendar-result .school-schedule-section { padding-top: 58px; }
 
 @media (max-width: 800px) {
   .compact-schedule { padding: 18px 20px 16px; }
@@ -565,12 +567,15 @@ section { scroll-margin-top: 86px; }
 .monthly-report-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .monthly-report-controls select, .monthly-report-controls input { min-height: 44px; padding: 0 12px; border: 1px solid #d7e2d2; border-radius: 11px; color: #26411d; background: #fff; font-family: inherit; }
 .monthly-report-controls button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 11px; color: #fff; background: #315f16; font-weight: 850; cursor: pointer; }
+.monthly-report-controls .monthly-batch-button { background: #173f75; }
 .monthly-report-controls button:disabled { opacity: .45; cursor: not-allowed; }
-.monthly-report-paper { width: min(920px, calc(100% - 48px)); margin: 26px auto 34px; padding: 45px; border: 1px solid #dbe6d6; border-radius: 4px; color: #183012; background: #fff; box-shadow: 0 20px 55px rgba(39,72,24,.09); }
-.monthly-report-paper > header { padding-bottom: 22px; border-bottom: 3px solid #3f7413; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
-.monthly-report-paper > header span, .monthly-teacher-note > p { color: #6fa733; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
-.monthly-report-paper > header h3 { margin: 6px 0 0; font-size: 28px; letter-spacing: -.045em; }
-.monthly-report-paper > header > strong { color: #54714a; font-size: 16px; }
+.monthly-report-paper { width: min(920px, calc(100% - 48px)); margin: 26px auto 34px; border: 1px solid #dbe6d6; border-radius: 4px; color: #183012; background: #fff; box-shadow: 0 20px 55px rgba(39,72,24,.09); }
+.monthly-print-page { padding: 45px; }
+.monthly-print-page + .monthly-print-page { border-top: 10px solid #edf3e9; }
+.monthly-print-page > header { padding-bottom: 22px; border-bottom: 3px solid #3f7413; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.monthly-print-page > header span, .monthly-teacher-note > p { color: #6fa733; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.monthly-print-page > header h3 { margin: 6px 0 0; font-size: 28px; letter-spacing: -.045em; }
+.monthly-print-page > header > strong { color: #54714a; font-size: 16px; }
 .monthly-report-profile { margin: 22px 0; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #dce7d8; }
 .monthly-report-profile dl { margin: 0; padding: 15px; border-right: 1px solid #dce7d8; }
 .monthly-report-profile dl:last-child { border: 0; }
@@ -591,8 +596,9 @@ section { scroll-margin-top: 86px; }
 .monthly-records table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .monthly-records th { padding: 10px; color: #64775d; background: #eef5ea; }
 .monthly-records td { padding: 10px; border-bottom: 1px solid #e5ece1; text-align: center; }
-.monthly-report-paper > footer { margin-top: 26px; padding-top: 18px; border-top: 1px solid #dce7d8; display: flex; justify-content: space-between; gap: 14px; color: #71806c; font-size: 10px; }
-.monthly-report-paper > footer b { color: #3f7413; font-size: 12px; }
+.monthly-print-page > footer { margin-top: 26px; padding-top: 18px; border-top: 1px solid #dce7d8; display: flex; justify-content: space-between; gap: 14px; color: #71806c; font-size: 10px; }
+.monthly-print-page > footer b { color: #3f7413; font-size: 12px; }
+.monthly-batch-print { display: none; }
 .monthly-report-empty { padding: 55px 20px; color: #788871; text-align: center; }
 .admin-login { width: min(470px, 100%); margin: 12vh auto 0; padding: 44px; border: 1px solid #dce8d7; border-radius: 25px; background: #fff; box-shadow: 0 25px 70px rgba(58,93,43,.1); }
 .admin-login-mark { width: 48px; height: 48px; margin-bottom: 24px; border-radius: 15px; display: grid; place-items: center; color: #fff; background: linear-gradient(145deg, #3f7413, #8fc94e); box-shadow: 0 12px 25px rgba(63,116,19,.2); font-family: Arial, sans-serif; font-weight: 900; }
@@ -1065,7 +1071,8 @@ footer { max-width: 1236px; min-height: 160px; margin: 0 auto; display: grid; gr
   .admin-save-bar button { justify-content: space-between; }
   .monthly-report-controls { width: 100%; }
   .monthly-report-controls select, .monthly-report-controls input, .monthly-report-controls button { flex: 1; }
-  .monthly-report-paper { width: calc(100% - 24px); padding: 24px; }
+  .monthly-report-paper { width: calc(100% - 24px); }
+  .monthly-print-page { padding: 24px; }
   .monthly-report-profile { grid-template-columns: repeat(2, 1fr); }
   .monthly-report-profile dl:nth-child(2) { border-right: 0; }
   .monthly-report-profile dl:nth-child(-n+2) { border-bottom: 1px solid #dce7d8; }
@@ -1123,14 +1130,27 @@ footer { max-width: 1236px; min-height: 160px; margin: 0 auto; display: grid; gr
 
 @media print {
   body * { visibility: hidden !important; }
-  .monthly-report-paper, .monthly-report-paper *, .level-report-paper, .level-report-paper * { visibility: visible !important; }
-  .monthly-report-paper { position: absolute; inset: 0 auto auto 0; width: 100%; margin: 0; padding: 12mm; border: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .level-report-paper, .level-report-paper * { visibility: visible !important; }
+  .print-monthly-single .monthly-report-section > .monthly-report-paper,
+  .print-monthly-single .monthly-report-section > .monthly-report-paper * { visibility: visible !important; }
+  .print-monthly-batch .monthly-batch-print,
+  .print-monthly-batch .monthly-batch-print * { visibility: visible !important; }
+  .print-monthly-batch .monthly-report-section > .monthly-report-paper { display: none !important; }
+  .print-monthly-batch .monthly-batch-print { position: absolute; inset: 0 auto auto 0; width: 100%; display: block !important; }
+  .monthly-report-paper { position: static; width: 100%; margin: 0; border: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .monthly-print-page { box-sizing: border-box; width: 100%; height: auto; min-height: 0; padding: 10mm; overflow: visible; break-after: page; page-break-after: always; }
+  .monthly-print-page + .monthly-print-page { border-top: 0; }
+  .print-monthly-single .monthly-report-paper .monthly-detail-page,
+  .print-monthly-batch .monthly-batch-paper:last-child .monthly-detail-page { break-after: auto; page-break-after: auto; }
   .level-report-paper { position: absolute; inset: 0 auto auto 0; width: 100%; margin: 0; padding: 12mm; border: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .level-diagnostic-table { min-width: 0 !important; }
   .level-diagnostic-table-wrap, .level-report-areas, .level-report-paper section, .level-deep-summary, .level-learning-plan { break-inside: avoid; }
-  .monthly-report-paper > header h3 { font-size: 24px; }
+  .monthly-print-page > header h3 { font-size: 24px; }
   .monthly-teacher-note { break-inside: avoid; }
-  .monthly-records { break-inside: avoid; }
+  .monthly-records { break-inside: auto; }
+  .monthly-detail-page .monthly-records { margin-top: 8mm; }
+  .monthly-detail-page .monthly-records table { font-size: 9px; }
+  .monthly-detail-page .monthly-records th, .monthly-detail-page .monthly-records td { padding: 5px 4px; }
   @page { size: A4; margin: 8mm; }
 }
 
@@ -1379,6 +1399,9 @@ footer { max-width: 1236px; min-height: 160px; margin: 0 auto; display: grid; gr
 .daily-question-top b { color: #cad4df; font-size: 18px; }
 .daily-audio { width: 100%; margin: 16px 0 4px; padding: 13px; border: 0; border-radius: 10px; color: #fff; background: #5a8738; font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; text-align: left; }
 .daily-audio small { float: right; opacity: .7; font-size: 9px; }
+.daily-audio-wrap { display: grid; gap: 8px; margin: 16px 0 4px; }
+.daily-audio-wrap .daily-audio { margin: 0; }
+.daily-audio-player { display: block; width: 100%; height: 40px; accent-color: #3f7413; }
 .daily-passage { min-height: 84px; margin: 16px 0 0; padding: 13px; border-radius: 10px; color: #445569; background: #f4f7fa; font-size: 12px; line-height: 1.65; }
 .daily-questions h4 { min-height: 48px; margin: 16px 0 12px; color: #20334a; font-size: 14px; line-height: 1.55; }
 .daily-options { display: grid; gap: 7px; }
@@ -1800,4 +1823,24 @@ footer { max-width: 1236px; min-height: 160px; margin: 0 auto; display: grid; gr
   .site-header nav a,
   .portal-header nav a { min-height: 42px; font-size: 9px; }
   .hero-actions { display: grid; grid-template-columns: 1fr; }
+}
+
+/* Consultation actions use a warm accent so they never blend into white cards. */
+.site-header nav .nav-cta,
+.portal-header nav .nav-cta,
+.button-light[href="#consult"],
+.result-actions a[href="#consult"],
+.mobile-cta {
+  border-color: #d94716 !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #f06a32, #d94716) !important;
+  box-shadow: 0 10px 24px rgba(217, 71, 22, .25);
+}
+.site-header nav .nav-cta:hover,
+.portal-header nav .nav-cta:hover,
+.button-light[href="#consult"]:hover,
+.result-actions a[href="#consult"]:hover,
+.mobile-cta:hover {
+  color: #fff !important;
+  background: linear-gradient(135deg, #df541f, #bd350d) !important;
 }

@@ -382,30 +382,38 @@ export default function AdminPage() {
     setMessage(`${item.studentName} 학생의 영역별 결과와 따뜻한 피드백 문자내용을 생성했습니다.`);
   }
 
-  async function sendDailyKakao(item: DailyResult) {
+  function openKakaoShare(statusKey: string, text: string, link: string) {
+    const kakao = window.Kakao;
+    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+    if (!kakaoKey) {
+      updateSendStatus(statusKey, { state: "error", message: "카카오 JavaScript 키 연결이 필요합니다." });
+      return;
+    }
+    if (!kakao) {
+      updateSendStatus(statusKey, { state: "error", message: "카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 눌러 주세요." });
+      return;
+    }
+    try {
+      if (!kakao.isInitialized()) kakao.init(kakaoKey);
+      const shareText = text.length > 200 ? `${text.slice(0, 197)}...` : text;
+      kakao.Share.sendDefault({
+        objectType: "text",
+        text: shareText,
+        link: { mobileWebUrl: link, webUrl: link },
+        buttonTitle: "벌교미래엔영어홈페이지보기",
+      });
+      updateSendStatus(statusKey, { state: "success", message: "카카오톡에서 친구 또는 채팅방을 선택해 보내 주세요." });
+      setMessage(`카카오톡 친구 선택창을 열었습니다.\n\n자동 생성된 공유 문구:\n${shareText}`);
+    } catch (error) {
+      console.error("Kakao Share failed", error);
+      updateSendStatus(statusKey, { state: "error", message: "카카오톡 친구 선택창을 열지 못했습니다. 잠시 후 다시 눌러 주세요." });
+    }
+  }
+
+  function sendDailyKakao(item: DailyResult) {
     const statusKey = `daily-${item.id}-kakao`;
     const link = "https://vercel-deploy-mauve-one-18.vercel.app/academy#daily-mini-test";
-    const text = dailyMessage(item, "kakao");
-    updateSendStatus(statusKey, { state: "sending", message: "카카오 알림톡 발송을 요청하는 중입니다…" });
-    const response = await fetch("/api/admin/send-kakao", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        to: item.phone,
-        text,
-        studentName: item.studentName,
-        testDate: item.testDate,
-        levelLabel: item.levelLabel,
-        score: item.score,
-        total: item.total,
-        link,
-      }),
-    });
-    const result = (await response.json().catch(() => ({}))) as { message?: string; messageId?: string };
-    const status = result.message ?? (response.ok ? "카카오 알림톡이 발송되었습니다." : "카카오 알림톡 발송에 실패했습니다.");
-    updateSendStatus(statusKey, { state: response.ok ? "success" : "error", message: response.ok ? `${status}${result.messageId ? ` · 접수번호 ${result.messageId}` : ""}` : status });
-    setMessage(`${status}\n\n이번에 자동 생성된 문구:\n${text}`);
+    openKakaoShare(statusKey, dailyMessage(item, "sms"), link);
   }
 
   async function sendDailySms(item: DailyResult) {
@@ -457,19 +465,10 @@ export default function AdminPage() {
     setMessage(`${status}\n\n자동 생성된 문구:\n${text}`);
   }
 
-  async function sendLevelKakao(item: LevelResult) {
+  function sendLevelKakao(item: LevelResult) {
     const statusKey = `level-${item.id}-kakao`;
     const link = "https://vercel-deploy-mauve-one-18.vercel.app/academy#level-test";
-    const text = levelMessage(item, "kakao");
-    updateSendStatus(statusKey, { state: "sending", message: "카카오 알림톡 발송을 요청하는 중입니다…" });
-    const response = await fetch("/api/admin/send-kakao", {
-      method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-      body: JSON.stringify({ to: item.phone, text, studentName: item.studentName, testDate: koreanDate(item.createdAt), levelLabel: item.trackLabel, score: item.score, total: item.total, link }),
-    });
-    const result = (await response.json().catch(() => ({}))) as { message?: string; messageId?: string };
-    const status = result.message ?? (response.ok ? "레벨테스트 카카오 알림톡이 발송되었습니다." : "카카오 알림톡 발송에 실패했습니다.");
-    updateSendStatus(statusKey, { state: response.ok ? "success" : "error", message: response.ok ? `${status}${result.messageId ? ` · 접수번호 ${result.messageId}` : ""}` : status });
-    setMessage(`${status}\n\n자동 생성된 문구:\n${text}`);
+    openKakaoShare(statusKey, levelMessage(item, "sms"), link);
   }
 
   const todayCount = consultations.filter((item) =>
@@ -548,7 +547,7 @@ export default function AdminPage() {
           </div>
           <div className="admin-record-table-wrap">
             <table className="admin-record-table"><thead><tr><th>응시일시</th><th>학생 이름</th><th>연락처</th><th>응시 레벨</th><th>총점</th><th>영역별 결과</th><th>결과 전송·평가지</th></tr></thead>
-              <tbody>{filteredResults.map((item) => { const sms = sendStatuses[`level-${item.id}-sms`]; const kakao = sendStatuses[`level-${item.id}-kakao`]; return <tr key={item.id}><td>{koreanDate(item.createdAt)}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.trackLabel}</td><td><b>{item.score}/{item.total}</b></td><td>어휘 {item.vocabulary}/{item.vocabularyTotal} · 문법 {item.grammar}/{item.grammarTotal} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send admin-level-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendLevelSms(item)}>{sms?.state === "sending" ? "문자 발송 중…" : "문자 즉시발송"}</button><button type="button" disabled={kakao?.state === "sending"} onClick={() => sendLevelKakao(item)}>{kakao?.state === "sending" ? "카카오 발송 중…" : "카카오톡 즉시발송"}</button><button className="admin-level-print-button" type="button" onClick={() => setPrintLevelResult(item)}>평가지 출력</button>{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡: {kakao.message}</p>}</div></td></tr>; })}
+              <tbody>{filteredResults.map((item) => { const sms = sendStatuses[`level-${item.id}-sms`]; const kakao = sendStatuses[`level-${item.id}-kakao`]; return <tr key={item.id}><td>{koreanDate(item.createdAt)}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.trackLabel}</td><td><b>{item.score}/{item.total}</b></td><td>어휘 {item.vocabulary}/{item.vocabularyTotal} · 문법 {item.grammar}/{item.grammarTotal} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send admin-level-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendLevelSms(item)}>{sms?.state === "sending" ? "문자 발송 중…" : "문자 즉시발송"}</button><button type="button" onClick={() => sendLevelKakao(item)}>카톡 보내기</button><button className="admin-level-print-button" type="button" onClick={() => setPrintLevelResult(item)}>평가지 출력</button>{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡: {kakao.message}</p>}</div></td></tr>; })}
               {!filteredResults.length && <tr><td colSpan={7} className="admin-record-empty">검색 조건에 맞는 레벨테스트 결과가 없습니다.</td></tr>}</tbody>
             </table>
           </div>
@@ -559,7 +558,7 @@ export default function AdminPage() {
             <div className="admin-level-report-toolbar"><strong>{printLevelResult.studentName} 학생 평가지</strong><div><button type="button" onClick={() => window.print()}>인쇄·PDF 저장</button><button type="button" onClick={() => setPrintLevelResult(null)}>닫기</button></div></div>
             <div className="admin-level-message-preview">
               <article><span>문자 자동 전송 내용</span><p>{levelMessage(printLevelResult, "sms")}</p><button type="button" onClick={() => sendLevelSms(printLevelResult)}>이 내용으로 문자 발송</button></article>
-              <article><span>카카오톡 자동 전송 내용</span><p>{levelMessage(printLevelResult, "kakao")}</p><button type="button" onClick={() => sendLevelKakao(printLevelResult)}>이 내용으로 카카오톡 발송</button></article>
+              <article><span>카카오톡 공유 내용</span><p>{levelMessage(printLevelResult, "sms")}</p><button type="button" onClick={() => sendLevelKakao(printLevelResult)}>카톡 친구 선택해서 보내기</button></article>
             </div>
             <article className="level-report-paper">
               <header><div><span>BEOLGYO MIRAE-N ENGLISH</span><h4>영어 레벨 진단 평가지</h4></div><strong>{printLevelResult.trackLabel}</strong></header>
@@ -604,7 +603,7 @@ export default function AdminPage() {
           </div>
           <div className="admin-record-table-wrap">
             <table className="admin-record-table"><thead><tr><th>응시일</th><th>학생</th><th>연락처</th><th>단계</th><th>총점</th><th>영역별 결과</th><th>결과 전송</th></tr></thead>
-              <tbody>{filteredDailyResults.map((item) => { const sms = sendStatuses[`daily-${item.id}-sms`]; const kakao = sendStatuses[`daily-${item.id}-kakao`]; const draft = dailySmsDrafts[item.id]; return <tr key={item.id}><td>{item.testDate}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.levelLabel}</td><td><b>{item.score}/{item.total}</b></td><td>듣기 {item.listening}/{item.listeningTotal} · 단어 {item.vocabulary}/{item.vocabularyTotal}{(item.grammarTotal ?? 0) > 0 ? ` · 문법 ${item.grammar ?? 0}/${item.grammarTotal}` : ""} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendDailySms(item)}>{sms?.state === "sending" ? "문자 발송 중…" : "문자 즉시발송"}</button><button type="button" disabled={kakao?.state === "sending"} onClick={() => sendDailyKakao(item)}>{kakao?.state === "sending" ? "카카오 발송 중…" : "카카오톡 즉시발송"}</button><button className="admin-message-generate" type="button" onClick={() => generateDailySmsDraft(item)}>문자내용 생성</button>{draft && <textarea className="admin-message-preview" aria-label={`${item.studentName} 문자내용 미리보기`} value={draft} readOnly rows={14} />}{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡: {kakao.message}</p>}</div></td></tr>; })}
+              <tbody>{filteredDailyResults.map((item) => { const sms = sendStatuses[`daily-${item.id}-sms`]; const kakao = sendStatuses[`daily-${item.id}-kakao`]; const draft = dailySmsDrafts[item.id]; return <tr key={item.id}><td>{item.testDate}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.levelLabel}</td><td><b>{item.score}/{item.total}</b></td><td>듣기 {item.listening}/{item.listeningTotal} · 단어 {item.vocabulary}/{item.vocabularyTotal}{(item.grammarTotal ?? 0) > 0 ? ` · 문법 ${item.grammar ?? 0}/${item.grammarTotal}` : ""} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendDailySms(item)}>{sms?.state === "sending" ? "솔라피 발송 중…" : "솔라피 문자보내기"}</button><button type="button" onClick={() => sendDailyKakao(item)}>카톡 보내기</button><button className="admin-message-generate" type="button" onClick={() => generateDailySmsDraft(item)}>문자내용 생성</button>{draft && <textarea className="admin-message-preview" aria-label={`${item.studentName} 문자내용 미리보기`} value={draft} readOnly rows={14} />}{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡: {kakao.message}</p>}</div></td></tr>; })}
               {!filteredDailyResults.length && <tr><td colSpan={7} className="admin-record-empty">저장된 DAILY 미니테스트 결과가 없습니다.</td></tr>}</tbody>
             </table>
           </div>

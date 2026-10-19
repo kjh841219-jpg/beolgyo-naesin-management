@@ -58,16 +58,15 @@ export default function Home() {
           </span>
         </a>
         <nav aria-label="주요 메뉴">
-          <a className="nav-naesin" href="https://naesin-vercel-deploy.vercel.app/">내신관리</a>
-          <a className="nav-miraen-learning" href="/miraen-learning">미래엔영어학습</a>
+          <a className="nav-level-test" href="#level-test">무료 레벨테스트</a>
+          <a className="nav-cta" href="#consult">상담예약</a>
+          <a className="nav-miraen-learning" href="https://beolgyo-miraen-learning.vercel.app/miraen-learning">미래엔영어학습</a>
+          <a className="nav-naesin" href="https://vercel-deploy-mauve-one-18.vercel.app/naesin?v=20260911">내신학습</a>
+          <a className="nav-dictionary" href="/dictionary">영어사전</a>
+          <a className="nav-daily-test" href="#daily-mini-test">DAILY 미니테스트</a>
           <a className="portal-active" href="/academy">학원소개</a>
           <a href="/academy-calendar">학원일정</a>
           <a href="/">학사일정</a>
-          <a className="nav-daily-test" href="#daily-mini-test">DAILY 미니테스트</a>
-          <a className="nav-level-test" href="#level-test">무료 레벨테스트</a>
-          <a className="nav-cta" href="#consult">
-            상담예약
-          </a>
           <a className="nav-admin" href="/admin">관리자 로그인</a>
         </nav>
       </header>

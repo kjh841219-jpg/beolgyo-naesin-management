@@ -5,7 +5,15 @@ import { isAdminAuthenticated } from "../../admin-auth";
 import { getJsonSetting, setJsonSetting } from "../../record-store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 const CONTENT_PATH = "landing-content.json";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  "CDN-Cache-Control": "no-store",
+  "Vercel-CDN-Cache-Control": "max-age=0",
+};
 
 async function readContent() {
   const content = await getJsonSetting<unknown>(CONTENT_PATH);
@@ -14,10 +22,12 @@ async function readContent() {
 
 export async function GET() {
   try {
-    return NextResponse.json(await readContent(), { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(await readContent(), {
+      headers: NO_STORE_HEADERS,
+    });
   } catch (error) {
     console.error("Content read failed", error);
-    return NextResponse.json(defaultLandingContent);
+    return NextResponse.json(defaultLandingContent, { headers: NO_STORE_HEADERS });
   }
 }
 
@@ -29,6 +39,7 @@ export async function PUT(request: Request) {
   try {
     const content = sanitizeLandingContent(payload);
     await setJsonSetting(CONTENT_PATH, content);
+    revalidatePath("/api/site-content");
     revalidatePath("/academy");
     revalidatePath("/academy-calendar");
     return NextResponse.json({ ok: true, content });
@@ -49,6 +60,7 @@ export async function PATCH(request: Request) {
     const current = await readContent();
     const content = sanitizeLandingContent({ ...current, academyEvents: payload.academyEvents });
     await setJsonSetting(CONTENT_PATH, content);
+    revalidatePath("/api/site-content");
     revalidatePath("/academy");
     revalidatePath("/academy-calendar");
     return NextResponse.json({ ok: true, content, savedCount: content.academyEvents.length });

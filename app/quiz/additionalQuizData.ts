@@ -1,12 +1,25 @@
 export type AddedSentence={en:string;ko:string;keywords:string[]};
 export type AddedPassage={title:string;publisher:string;grade:string;lesson:string;sentences:AddedSentence[]};
 
+import {cheonjaeSoyeongsunLesson3Passages} from "./cheonjaeSoyeongsunLesson3";
+import {dongaYoonJeongmiLessons7And8Passages} from "./dongaYoonJeongmiLessons7And8";
+import {bisangHwangJongbaeLessons7And8Passages} from "./bisangHwangJongbaeLessons7And8";
+import {dongaYoonJeongmiMiddle2Lessons7And8Passages} from "./dongaYoonJeongmiMiddle2Lessons7And8";
+import {cheonjaeSoyeongsunMiddle1Lesson7Passages} from "./cheonjaeSoyeongsunMiddle1Lesson7";
+import {cheonjaeSoyeongsunMiddle2Lesson7Passages} from "./cheonjaeSoyeongsunMiddle2Lesson7";
+
 const q=(en:string,ko:string):AddedSentence=>({
   en,ko,
   keywords:ko.replace(/[^가-힣A-Za-z0-9 ]/g," ").split(/\s+/).filter(x=>x.length>=2).slice(0,6)
 });
 
 export const additionalPassages:AddedPassage[]=[
+ ...cheonjaeSoyeongsunLesson3Passages,
+ ...dongaYoonJeongmiLessons7And8Passages,
+ ...bisangHwangJongbaeLessons7And8Passages,
+ ...dongaYoonJeongmiMiddle2Lessons7And8Passages,
+ ...cheonjaeSoyeongsunMiddle1Lesson7Passages,
+ ...cheonjaeSoyeongsunMiddle2Lesson7Passages,
  {publisher:"비상교육 · 황종배",grade:"중학교 2학년",lesson:"5과",title:"The Pea Blossom",sentences:[
   q("Five little peas lived together in a pod.","다섯 개의 작은 완두콩이 꼬투리 속에서 함께 살았다."),
   q("The biggest pea said, 'What is the world like?'","가장 큰 완두콩이 말했다. '세상은 어떤 것 같아?'"),

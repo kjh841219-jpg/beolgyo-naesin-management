@@ -49,9 +49,14 @@ function formatAgendaDate(date: string) {
   return `${parsed.getMonth() + 1}.${String(parsed.getDate()).padStart(2, "0")} (${weekDays[parsed.getDay()]})`;
 }
 
-export function SchoolScheduleSearch() {
+type SchoolScheduleSearchProps = {
+  initialQuery?: string;
+  autoSearch?: boolean;
+};
+
+export function SchoolScheduleSearch({ initialQuery = "벌교", autoSearch = false }: SchoolScheduleSearchProps = {}) {
   const today = new Date();
-  const [query, setQuery] = useState("벌교");
+  const [query, setQuery] = useState(initialQuery);
   const [region, setRegion] = useState("Q10");
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -104,13 +109,21 @@ export function SchoolScheduleSearch() {
       setMessage(nextSchools.length
         ? `${nextSchools.length}개 학교를 찾았습니다. 확인할 학교를 선택해 주세요.`
         : "검색 결과가 없습니다. 학교의 정식 명칭이나 지역을 다시 확인해 주세요.");
-      if (nextSchools.length === 1) setSelectedSchool(nextSchools[0]);
+      const exactSchool = nextSchools.find((school) => school.name.replace(/\s/g, "") === name.replace(/\s/g, ""));
+      if (exactSchool || nextSchools.length === 1) setSelectedSchool(exactSchool ?? nextSchools[0]);
     } catch (error) {
       setMessage(error instanceof Error && error.message ? error.message : "학교 검색 중 오류가 발생했습니다.");
     } finally {
       setSearching(false);
     }
   }
+
+  useEffect(() => {
+    if (!autoSearch || initialQuery.trim().length < 2) return;
+    void searchSchools();
+    // The initial landing-page search should run once when this result panel opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!selectedSchool) return;

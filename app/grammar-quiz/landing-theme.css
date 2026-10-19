@@ -1,0 +1,16 @@
+.gq{--ink:#132513!important;background:#fff!important}
+.gq-top>a span{background:#58b62b!important}
+.gq-top>a:first-child span{font-size:0}
+.gq-top>a:first-child span::after{content:"M";font-size:13px}
+.gq-hero{background:linear-gradient(135deg,#f7fbf4,#eaf5e4)!important;color:#132513!important}
+.gq-hero h1 strong,.gq-hero p{color:#58b62b!important}
+.gq-hero>div>span{color:#61705e!important}
+.gq-score{color:#132513;border-color:#dcebd5;border-top-color:#58b62b!important}
+.gq-practice{background:#f4f7fb}
+.gq-practice>aside{background:#fff!important}
+.gq-practice>aside p{color:#58b62b}
+.gq-practice>aside button{color:#273528}
+.gq-practice>aside button.on{background:#58b62b!important;color:#fff}
+.gq-practice>aside button small{color:#71806f}
+.gq-card footer button,.gq-exam footer button,.gq-tools button{background:#132513}
+.gq-card footer button:first-child,.gq-exam footer button:first-child,.gq-tools button:first-of-type{background:#58b62b!important}

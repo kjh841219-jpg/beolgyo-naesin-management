@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import KakaoSdkLoader from "./KakaoSdkLoader";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,9 +31,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const kakaoJavaScriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim();
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        {children}
+        <KakaoSdkLoader javaScriptKey={kakaoJavaScriptKey} />
+      </body>
     </html>
   );
 }

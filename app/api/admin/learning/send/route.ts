@@ -51,8 +51,14 @@ export async function POST(request: Request) {
   });
   const result = await response.json().catch(() => ({})) as { failedMessageList?: { statusMessage?: string }[]; messageList?: { messageId?: string }[]; errorMessage?: string; message?: string };
   const failed = result.failedMessageList?.[0], status = response.ok && !failed ? "sent" : "failed", providerId = result.messageList?.[0]?.messageId ?? "";
-  const db = database(); await ensureLearningSchema(db);
-  await db.prepare("INSERT INTO message_logs(student_id,channel,recipient,body,status,provider_id) VALUES(?,?,?,?,?,?)").bind(studentId, imageId ? "mms" : channel, to, text, status, providerId).run();
+  try {
+    const db = database(); await ensureLearningSchema(db);
+    await db.prepare("INSERT INTO message_logs(student_id,channel,recipient,body,status,provider_id) VALUES(?,?,?,?,?,?)").bind(studentId, imageId ? "mms" : channel, to, text, status, providerId).run();
+  } catch (error) {
+    // Solapi의 접수 결과가 확정된 뒤 기록 DB 오류로 500을 반환하면 사용자가
+    // 재전송하여 중복 문자가 발생할 수 있으므로, 발송 결과와 기록 저장을 분리한다.
+    console.error("[learning/send] message log write failed", { studentId, status, error: error instanceof Error ? error.message : String(error) });
+  }
   if (status === "failed") {
     const reason = failed?.statusMessage || result.errorMessage || result.message || "발송에 실패했습니다.";
     console.error("[learning/send] message rejected", { status: response.status, reason });

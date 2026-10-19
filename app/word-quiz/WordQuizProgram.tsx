@@ -2,12 +2,17 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { wordSets as baseWordSets } from "./wordQuizData";
 import { supplementalWordSets } from "./supplementalWordQuizData";
+import { dongaYoonJeongmiLessons7And8WordSets } from "./dongaYoonJeongmiLessons7And8Words";
+import { dongaYoonJeongmiMiddle2Lessons7And8WordSets } from "./dongaYoonJeongmiMiddle2Lessons7And8Words";
+import { cheonjaeSoyeongsunMiddle1Lesson7WordSets } from "./cheonjaeSoyeongsunMiddle1Lesson7Words";
+import { cheonjaeSoyeongsunMiddle2Lesson7WordSets } from "./cheonjaeSoyeongsunMiddle2Lesson7Words";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
-const wordSets=[...baseWordSets,...supplementalWordSets];
+const wordSets=[...baseWordSets,...supplementalWordSets,...dongaYoonJeongmiLessons7And8WordSets,...dongaYoonJeongmiMiddle2Lessons7And8WordSets,...cheonjaeSoyeongsunMiddle1Lesson7WordSets,...cheonjaeSoyeongsunMiddle2Lesson7WordSets];
+const numberOrder=(value:string)=>Number.parseInt(value.match(/\d+/)?.[0]||"999",10);
 const clean = (s: string) =>
   s.toLowerCase().replace(/[’]/g, "'").replace(/[~·,./()\s-]/g, "");
 const meaningMatches = (answer: string, meaning: string) => {
@@ -85,7 +90,8 @@ export default function WordQuizProgram() {
       .filter(
         ({ x }) =>
           x.publisher === current.publisher && x.grade === current.grade,
-      );
+      )
+      .sort((a,b)=>numberOrder(a.x.lesson)-numberOrder(b.x.lesson)||a.x.source.localeCompare(b.x.source,"ko"));
   const direction = useMemo(
     () => (mode === "mixed" && position % 2 === 1 ? "spelling" : "meaning"),
     [mode, position],

@@ -21,10 +21,11 @@ export function HeroCopy() {
       </h1>
       <p className="hero-description">{content.heroDescription}</p>
       <div className="hero-actions">
-        <a className="button management-button" href="https://naesin-vercel-deploy.vercel.app/">학원관리 내신사이트 <span>→</span></a>
-        <a className="button learning-button" href="/miraen-learning">미래엔영어학습 <span>→</span></a>
         <a className="button button-dark" href="#level-test">무료 레벨테스트 <span>→</span></a>
         <a className="button button-light" href="#consult">학생 상담예약</a>
+          <a className="button learning-button" href="https://beolgyo-miraen-learning.vercel.app/miraen-learning">미래엔영어학습 <span>→</span></a>
+        <a className="button management-button" href="https://vercel-deploy-mauve-one-18.vercel.app/naesin?v=20260911">내신학습앱 <span>→</span></a>
+        <a className="button dictionary-button" href="/dictionary">영어사전 <span>→</span></a>
       </div>
       <div className="hero-stats" aria-label="학원 핵심 정보">
         <div><strong>15년+</strong><span>영어교육 경력</span></div>

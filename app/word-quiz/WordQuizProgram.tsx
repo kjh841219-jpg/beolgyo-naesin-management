@@ -9,6 +9,7 @@ import { cheonjaeSoyeongsunMiddle2Lesson7WordSets } from "./cheonjaeSoyeongsunMi
 import { bisangHwangJongbaeMiddle2Lesson7WordSets } from "./bisangHwangJongbaeMiddle2Lesson7Words";
 import { dongaYoonJeongmiMiddle3Lessons7And8WordSets } from "./dongaYoonJeongmiMiddle3Lessons7And8Words";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
+import {shuffleQuizItems} from "../lib/quizGrading";
 import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "mixed";
@@ -31,7 +32,7 @@ const meaningMatches = (answer: string, meaning: string) => {
           (submitted.includes(accepted) || accepted.includes(submitted))),
     );
 };
-const mix = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
+const mix = shuffleQuizItems;
 const similarityScore = (spoken: string, target: string) => {
   const a = clean(spoken), b = clean(target);
   if (!a || !b) return 0;
@@ -180,7 +181,7 @@ export default function WordQuizProgram() {
         grade: current.grade,
         lesson: current.lesson,
         passage: `단어 테스트 · ${current.lesson}`,
-        quizType: mode === "meaning" ? "word-meaning" : "word-mixed",
+        quizType: mode === "meaning" || mode === "study" ? "word-meaning" : "word-mixed",
         questionIndex: (queue[position] ?? 0) + 1,
         correct:resultCorrect,
         answerText:submittedAnswer,

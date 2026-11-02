@@ -6,6 +6,7 @@ import exam2025SeptemberAll from "./exam2025SeptemberAll.json";
 import { listening2026March1to8 } from "./listening2026March1to8";
 import BlankWrongReview from "./BlankWrongReview";
 import { speakEnglish } from "../lib/speakEnglish";
+import {isAcceptableTranslation,isCorrectWordOrder,stableShuffleEnglishWords} from "../lib/quizGrading";
 import {sendTestEmailNotification} from "../test-email";
 
 type Sentence = { en: string; ko: string; keywords: string[] };
@@ -231,12 +232,7 @@ const normalize = (x: string) =>
 const chunks = (s: string) =>
   (s.match(/[A-Za-z0-9]+(?:[’'][A-Za-z0-9]+)*/g) || []).filter(Boolean);
 const sameWordOrder = (answerWords: string[], sentence: string) => {
-  const expected = chunks(sentence).map(normalize);
-  const submitted = answerWords.map(normalize).filter(Boolean);
-  return (
-    submitted.length === expected.length &&
-    submitted.every((word, index) => word === expected[index])
-  );
+  return isCorrectWordOrder(answerWords, sentence);
 };
 export const quizPassages: Passage[] = [
   ...passages,
@@ -305,7 +301,7 @@ export default function QuizProgram() {
         (p.publisher || "천재교육 · 소영순") === currentPublisher &&
         (p.grade || "중학교 2학년") === currentGrade,
     )
-    .sort((a,b)=>numberOrder(a.p.lesson||"999")-numberOrder(b.p.lesson||"999")||a.p.title.localeCompare(b.p.title,"ko"));
+    .sort((a,b)=>numberOrder(a.p.lesson||"5과")-numberOrder(b.p.lesson||"5과")||a.p.title.localeCompare(b.p.title,"ko"));
   const wrongItems = useMemo(
     () =>
       student?.adminPractice
@@ -338,13 +334,7 @@ export default function QuizProgram() {
   useEffect(()=>{if(!student)return;try{const saved=JSON.parse(localStorage.getItem(`beolgyo-passage-progress-${student.id||student.name}`)||"null");if(saved&&quizPassages[saved.passage]){setType(saved.type||"translate");setPassage(saved.passage);setIndex(Math.min(saved.index||0,quizPassages[saved.passage].sentences.length-1));setAnswer(saved.answer||"");setBuilt(Array.isArray(saved.built)?saved.built:[]);setChecked(Boolean(saved.checked));setCheckedResult(typeof saved.checkedResult==="boolean"?saved.checkedResult:null);const done=Array.isArray(saved.completedSentences)?saved.completedSentences:[];const right=Array.isArray(saved.correctSentences)?saved.correctSentences:[];setCompletedSentences(done);setCorrectSentences(right);setSolved(done.length);setScore(right.length)}}catch{}setProgressReady(true)},[student]);
   useEffect(()=>{if(!student||!progressReady)return;localStorage.setItem(`beolgyo-passage-progress-${student.id||student.name}`,JSON.stringify({type,passage,index,answer,built,checked,checkedResult,score,solved,completedSentences,correctSentences,updatedAt:new Date().toISOString()}))},[student,progressReady,type,passage,index,answer,built,checked,checkedResult,score,solved,completedSentences,correctSentences]);
   useEffect(()=>{if(!student?.id||!progressReady)return;const timer=window.setTimeout(()=>void fetch("/api/student/quiz-progress",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({area:"passage",progress:{type,passage,index,answer,built,checked,score,solved,total:current.sentences.length,publisher:currentPublisher,grade:currentGrade,lesson:currentLesson,title:current.title}})}),500);return()=>window.clearTimeout(timer)},[student?.id,progressReady,type,passage,index,answer,built,checked,score,solved,currentPublisher,currentGrade,currentLesson,current.title,current.sentences.length]);
-  const shuffled = useMemo(
-    () =>
-      chunks(sentence.en)
-        .map((word, i) => ({ word, key: `${word}-${i}` }))
-        .sort((a, b) => normalize(a.key).localeCompare(normalize(b.key))),
-    [sentence.en],
-  );
+  const shuffled = useMemo(() => stableShuffleEnglishWords(sentence.en), [sentence.en]);
   const openWrong = (item: any) => {
     setPassage(item.passageIndex);
     setIndex(Number(item.questionIndex) - 1);
@@ -538,9 +528,7 @@ export default function QuizProgram() {
     if (type === "order" && built.length !== chunks(sentence.en).length) return;
     let ok = false;
     if (type === "translate")
-      ok =
-        sentence.keywords.filter((k) => answer.includes(k)).length >=
-        Math.ceil(sentence.keywords.length * 0.65);
+      ok = isAcceptableTranslation(answer, sentence.ko, sentence.keywords);
     else if (type === "order") ok = sameWordOrder(built, sentence.en);
     else ok = normalize(answer) === normalize(sentence.en);
     setChecked(true);
@@ -604,8 +592,7 @@ export default function QuizProgram() {
   };
   const isCorrect =
     type === "translate"
-      ? sentence.keywords.filter((k) => answer.includes(k)).length >=
-        Math.ceil(sentence.keywords.length * 0.65)
+      ? isAcceptableTranslation(answer, sentence.ko, sentence.keywords)
       : type === "order"
         ? sameWordOrder(built, sentence.en)
         : normalize(answer) === normalize(sentence.en);

@@ -7,6 +7,7 @@ import {bisangHwangJongbaeLessons7And8Passages} from "./bisangHwangJongbaeLesson
 import {dongaYoonJeongmiMiddle2Lessons7And8Passages} from "./dongaYoonJeongmiMiddle2Lessons7And8";
 import {cheonjaeSoyeongsunMiddle1Lesson7Passages} from "./cheonjaeSoyeongsunMiddle1Lesson7";
 import {cheonjaeSoyeongsunMiddle2Lesson7Passages} from "./cheonjaeSoyeongsunMiddle2Lesson7";
+import {dongaYoonJeongmiMiddle3Lessons7And8Passages} from "./dongaYoonJeongmiMiddle3Lessons7And8";
 
 const q=(en:string,ko:string):AddedSentence=>({
   en,ko,
@@ -20,6 +21,7 @@ export const additionalPassages:AddedPassage[]=[
  ...dongaYoonJeongmiMiddle2Lessons7And8Passages,
  ...cheonjaeSoyeongsunMiddle1Lesson7Passages,
  ...cheonjaeSoyeongsunMiddle2Lesson7Passages,
+ ...dongaYoonJeongmiMiddle3Lessons7And8Passages,
  {publisher:"비상교육 · 황종배",grade:"중학교 2학년",lesson:"5과",title:"The Pea Blossom",sentences:[
   q("Five little peas lived together in a pod.","다섯 개의 작은 완두콩이 꼬투리 속에서 함께 살았다."),
   q("The biggest pea said, 'What is the world like?'","가장 큰 완두콩이 말했다. '세상은 어떤 것 같아?'"),

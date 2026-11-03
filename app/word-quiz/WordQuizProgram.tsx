@@ -12,7 +12,7 @@ import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 import {shuffleQuizItems} from "../lib/quizGrading";
 import {sendTestEmailNotification} from "../test-email";
 
-type Mode = "study" | "meaning" | "mixed";
+type Mode = "study" | "meaning" | "spelling" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
 const wordSets=[...baseWordSets,...supplementalWordSets,...dongaYoonJeongmiLessons7And8WordSets,...dongaYoonJeongmiMiddle2Lessons7And8WordSets,...cheonjaeSoyeongsunMiddle1Lesson7WordSets,...cheonjaeSoyeongsunMiddle2Lesson7WordSets,...bisangHwangJongbaeMiddle2Lesson7WordSets,...dongaYoonJeongmiMiddle3Lessons7And8WordSets];
 const numberOrder=(value:string)=>Number.parseInt(value.match(/\d+/)?.[0]||"999",10);
@@ -96,7 +96,10 @@ export default function WordQuizProgram() {
       )
       .sort((a,b)=>numberOrder(a.x.lesson)-numberOrder(b.x.lesson)||a.x.source.localeCompare(b.x.source,"ko"));
   const direction = useMemo(
-    () => (mode === "mixed" && position % 2 === 1 ? "spelling" : "meaning"),
+    () =>
+      mode === "spelling" || (mode === "mixed" && position % 2 === 1)
+        ? "spelling"
+        : "meaning",
     [mode, position],
   );
   const reset = (nextMode: Mode = mode, nextSet = setIndex) => {
@@ -181,7 +184,12 @@ export default function WordQuizProgram() {
         grade: current.grade,
         lesson: current.lesson,
         passage: `단어 테스트 · ${current.lesson}`,
-        quizType: mode === "meaning" || mode === "study" ? "word-meaning" : "word-mixed",
+        quizType:
+          mode === "spelling"
+            ? "word-spelling"
+            : mode === "mixed"
+              ? "word-mixed"
+              : "word-meaning",
         questionIndex: (queue[position] ?? 0) + 1,
         correct:resultCorrect,
         answerText:submittedAnswer,
@@ -554,12 +562,13 @@ export default function WordQuizProgram() {
           {[
             ["study", "01", "음원 듣고 공부하기", "단어와 뜻을 함께 학습"],
             ["meaning", "02", "단어 뜻쓰기", "영단어를 보고 뜻 입력"],
-            ["mixed", "03", "혼합 테스트", "뜻쓰기와 철자쓰기 교차"],
+            ["spelling", "03", "영단어 쓰기", "우리말 뜻을 보고 영단어 입력"],
+            ["mixed", "04", "혼합 테스트", "뜻쓰기와 철자쓰기 교차"],
           ].map((x) => (
             <button
               key={x[0]}
               className={mode === x[0] ? "active" : ""}
-              onClick={() => {if(x[0]==="meaning")setPrintMode("meaning");if(x[0]==="mixed")setPrintMode("mixed");reset(x[0] as Mode)}}
+              onClick={() => {if(x[0]==="meaning")setPrintMode("meaning");if(x[0]==="spelling")setPrintMode("spelling");if(x[0]==="mixed")setPrintMode("mixed");reset(x[0] as Mode)}}
             >
               <i>{x[1]}</i>
               <b>{x[2]}</b>

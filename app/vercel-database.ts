@@ -21,11 +21,22 @@ function postgres(sql:string){
  return q.replace(/; ON CONFLICT/g," ON CONFLICT");
 }
 
+const tablesWithoutGeneratedId=new Set(["quiz_progress","uploaded_file_chunks"]);
+export function shouldReturnInsertedId(sql:string){
+ const table=sql.trim().match(/^INSERT\s+INTO\s+([a-z_][a-z0-9_]*)/i)?.[1]?.toLowerCase();
+ return Boolean(table&&!tablesWithoutGeneratedId.has(table));
+}
+
 class Statement{
  constructor(public source:string,public values:unknown[]=[]){ }
  bind(...values:unknown[]){return new Statement(this.source,values)}
  async all<T>(){const rows=await client().query(postgres(this.source),this.values);return{results:rows as T[]}}
- async run(){let q=postgres(this.source);if(/^INSERT\s/i.test(q)&&!(/\bRETURNING\b/i.test(q)))q+=" RETURNING id";const rows=await client().query(q,this.values);return{success:true,meta:{last_row_id:Number(rows?.[0]?.id??0)}}}
+ async run(){
+  let q=postgres(this.source);
+  if(shouldReturnInsertedId(q)&&!(/\bRETURNING\b/i.test(q)))q+=" RETURNING id";
+  const rows=await client().query(q,this.values);
+  return{success:true,meta:{last_row_id:Number(rows?.[0]?.id??0)}};
+ }
 }
 
 export type VercelDatabase={prepare(sql:string):Statement;batch(statements:Statement[]):Promise<unknown[]>};

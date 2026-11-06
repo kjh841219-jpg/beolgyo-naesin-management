@@ -14,6 +14,11 @@ const percent = (score: number, total: number) => total ? Math.round((score / to
 const average = (values: number[]) => values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
 const monthLabel = (month: string) => { const [year, value] = month.split("-"); return `${year}년 ${Number(value)}월`; };
 const studentKey = (item: Pick<MonthlyDailyItem, "studentName" | "phone">) => `${item.studentName.trim()}|${item.phone.replace(/\D/g, "")}`;
+const latestByDate = (items: MonthlyDailyItem[]) => {
+  const dates = new Map<string, MonthlyDailyItem>();
+  items.forEach((item) => dates.set(item.testDate, item));
+  return [...dates.values()].sort((a, b) => a.testDate.localeCompare(b.testDate) || a.id.localeCompare(b.id));
+};
 
 function evaluation(name: string, attendance: number, overall: number, strongest: string, weakest: string) {
   const effort = attendance >= 20 ? "한 달 동안 매우 꾸준하게 참여하며 성실한 학습 습관을 보여주었습니다." : attendance >= 12 ? "정해진 학습에 꾸준히 참여하며 좋은 학습 흐름을 만들어 가고 있습니다." : "학습에 참여한 날의 집중도는 좋았습니다. 다음 달에는 조금 더 규칙적인 참여를 기대합니다.";
@@ -57,7 +62,7 @@ export default function MonthlyDailyReport({ items }: { items: MonthlyDailyItem[
   const [month, setMonth] = useState(currentMonth);
   const monthItems = useMemo(() => items.filter((item) => item.testDate.startsWith(month)), [items, month]);
   const students = useMemo(() => { const map = new Map<string, Student>(); monthItems.forEach((item) => { const key = studentKey(item); if (!map.has(key)) map.set(key, { key, name: item.studentName.trim(), phone: item.phone }); }); return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "ko")); }, [monthItems]);
-  const recordsByStudent = useMemo(() => { const map = new Map<string, MonthlyDailyItem[]>(); monthItems.forEach((item) => { const key = studentKey(item); map.set(key, [...(map.get(key) ?? []), item]); }); map.forEach((records) => records.sort((a, b) => a.testDate.localeCompare(b.testDate) || a.id.localeCompare(b.id))); return map; }, [monthItems]);
+  const recordsByStudent = useMemo(() => { const map = new Map<string, MonthlyDailyItem[]>(); monthItems.forEach((item) => { const key = studentKey(item); map.set(key, [...(map.get(key) ?? []), item]); }); map.forEach((records, key) => map.set(key, latestByDate(records))); return map; }, [monthItems]);
   const [selectedKey, setSelectedKey] = useState("");
   const activeKey = students.some((entry) => entry.key === selectedKey) ? selectedKey : students[0]?.key ?? "";
   const student = students.find((entry) => entry.key === activeKey);

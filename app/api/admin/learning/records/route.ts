@@ -18,7 +18,16 @@ export async function POST(request:Request){
 
 export async function PATCH(request:Request){
   if(!(await requireAdmin())) return Response.json({error:"관리자 로그인이 필요합니다."},{status:401});
-  const b=await request.json().catch(()=>({})); const studentId=Number(b.studentId),recordId=Number(b.recordId);
+  const b=await request.json().catch(()=>({}));
+  if(b.bulk===true){
+    const examTerm=clean(b.examTerm,30),examWeek=clean(b.examWeek,30);
+    if(!examTerm||!examWeek)return Response.json({error:"시험 종류와 주차를 확인해 주세요."},{status:400});
+    const db=database();await ensureLearningSchema(db);
+    const {results}=await db.prepare("SELECT COUNT(*) AS count FROM study_records WHERE student_id IN (SELECT id FROM students)").all<{count:number}>();
+    await db.prepare("UPDATE study_records SET exam_term=?,exam_week=? WHERE student_id IN (SELECT id FROM students)").bind(examTerm,examWeek).run();
+    return Response.json({ok:true,updated:Number(results?.[0]?.count||0)});
+  }
+  const studentId=Number(b.studentId),recordId=Number(b.recordId);
   if(!studentId||!recordId)return Response.json({error:"수정할 학생 기록을 확인해 주세요."},{status:400});
   const db=database(); await ensureLearningSchema(db);
   const {results}=await db.prepare("SELECT id FROM study_records WHERE id=? AND student_id=? LIMIT 1").bind(recordId,studentId).all();

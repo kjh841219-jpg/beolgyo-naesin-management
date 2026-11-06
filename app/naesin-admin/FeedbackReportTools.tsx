@@ -928,6 +928,9 @@ export default function FeedbackReportTools() {
   }
   async function createFullReportImage() {
     if (!student) return null;
+    const graphBlob = await createReportImage();
+    if (!graphBlob) return null;
+    const graphImage = await createImageBitmap(graphBlob);
     const canvas = document.createElement("canvas");
     canvas.width = 900;
     const measure = canvas.getContext("2d");
@@ -935,69 +938,14 @@ export default function FeedbackReportTools() {
     measure.font = '19px "Malgun Gothic",Arial,sans-serif';
     const feedbackLines = wrappedLines(measure, text, 750),
       feedbackHeight = Math.max(300, feedbackLines.length * 31 + 105);
-    canvas.height = 805 + feedbackHeight + 105;
+    canvas.height = 1500 + feedbackHeight + 125;
     const c = canvas.getContext("2d");
     if (!c) return null;
     c.fillStyle = "#f4f8ff";
     c.fillRect(0, 0, canvas.width, canvas.height);
-    c.fillStyle = "#0e3d91";
-    c.fillRect(0, 0, 900, 180);
-    c.fillStyle = "white";
-    c.font = '700 42px "Malgun Gothic",Arial,sans-serif';
-    c.fillText("벌교미래엔영어 학습 리포트", 50, 78);
-    c.font = '26px "Malgun Gothic",Arial,sans-serif';
-    c.fillText(
-      `${student.name} · ${period === "weekly" ? "주간" : "데일리"} 학습 피드백`,
-      50,
-      130,
-    );
-    const rings = [
-      { label: "종합", value: overall, color: "#0e3d91" },
-      { label: "내신", value: studyRate, color: "#188567" },
-      { label: "퀴즈", value: quizRate, color: "#e0922f" },
-      { label: "숙제", value: homeworkRate, color: "#7657c7" },
-    ];
-    rings.forEach((ring, index) => {
-      const x = 120 + index * 220,
-        y = 300;
-      c.lineWidth = 18;
-      c.strokeStyle = "#dbe5f2";
-      c.beginPath();
-      c.arc(x, y, 70, 0, Math.PI * 2);
-      c.stroke();
-      c.strokeStyle = ring.color;
-      c.beginPath();
-      c.arc(
-        x,
-        y,
-        70,
-        -Math.PI / 2,
-        -Math.PI / 2 + (Math.PI * 2 * clamp(ring.value)) / 100,
-      );
-      c.stroke();
-      c.fillStyle = "#14233d";
-      c.textAlign = "center";
-      c.font = '700 31px "Malgun Gothic",Arial,sans-serif';
-      c.fillText(`${clamp(ring.value)}%`, x, y + 10);
-      c.font = '700 20px "Malgun Gothic",Arial,sans-serif';
-      c.fillText(ring.label, x, y + 110);
-    });
-    c.textAlign = "left";
-    let y = 480;
-    for (const [label, key] of fields) {
-      const value = latest?.[key] || 0;
-      c.fillStyle = "#14233d";
-      c.font = '700 20px "Malgun Gothic",Arial,sans-serif';
-      c.fillText(label, 55, y);
-      c.fillStyle = "#dbe5f2";
-      c.fillRect(190, y - 18, 590, 22);
-      c.fillStyle = "#188567";
-      c.fillRect(190, y - 18, (590 * clamp(value)) / 100, 22);
-      c.fillStyle = "#14233d";
-      c.fillText(`${value}%`, 800, y);
-      y += 57;
-    }
-    const cardTop = 770;
+    c.drawImage(graphImage, 0, 0, 900, 1500);
+    graphImage.close();
+    const cardTop = 1500;
     c.fillStyle = "white";
     c.fillRect(45, cardTop, 810, feedbackHeight);
     c.fillStyle = "#14233d";
@@ -1081,7 +1029,7 @@ export default function FeedbackReportTools() {
             "그래프를 크게 확인하고 자세히 보기에서 전체 피드백을 확인하세요.",
           imageUrl: previewUrl,
           imageWidth: 900,
-          imageHeight: 1200,
+          imageHeight: 1500,
           link: { mobileWebUrl: detailUrl, webUrl: detailUrl },
         },
         buttons: [

@@ -27,3 +27,15 @@ export async function PATCH(request:Request){
   await db.prepare("UPDATE study_records SET study_date=?,exam_week=?,textbook=?,grammar=?,school_print=?,vocabulary=?,writing=?,problem_solving=?,wrong_notebook=?,task_scores=?,mistakes=?,next_action=?,teacher_note=? WHERE id=? AND student_id=?").bind(clean(b.studyDate,10),clean(b.examWeek,30),score(b.textbook),score(b.grammar),score(b.schoolPrint),score(b.vocabulary),score(b.writing),score(b.problemSolving),score(b.wrongNotebook),taskScores,clean(b.mistakes,800),clean(b.nextAction,800),clean(b.teacherNote,1200),recordId,studentId).run();
   return Response.json({ok:true});
 }
+
+export async function DELETE(request:Request){
+  if(!(await requireAdmin())) return Response.json({error:"관리자 로그인이 필요합니다."},{status:401});
+  const b=await request.json().catch(()=>({}));
+  const studentId=Number(b.studentId),recordId=Number(b.recordId);
+  if(!studentId||!recordId)return Response.json({error:"삭제할 학생 기록을 확인해 주세요."},{status:400});
+  const db=database();await ensureLearningSchema(db);
+  const {results}=await db.prepare("SELECT id,study_date AS studyDate,exam_week AS examWeek FROM study_records WHERE id=? AND student_id=? LIMIT 1").bind(recordId,studentId).all();
+  if(!results?.length)return Response.json({error:"삭제할 기록을 찾지 못했습니다."},{status:404});
+  await db.prepare("DELETE FROM study_records WHERE id=? AND student_id=?").bind(recordId,studentId).run();
+  return Response.json({ok:true,deleted:results[0]});
+}

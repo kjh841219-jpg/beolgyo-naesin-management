@@ -16,7 +16,7 @@ export default function StudyWeekStructure(){
   let connectedSelect:HTMLSelectElement|null=null;
   const syncSelection=()=>{if(connectedSelect)setSelected(connectedSelect.value)};
   const connect=()=>{
-   const form=document.querySelector(".study-record-form"),basic=form?.querySelector(".study-basic"),select=basic?.querySelector("select") as HTMLSelectElement|null;
+   const form=document.querySelector(".study-record-form"),basic=form?.querySelector(".study-basic"),select=basic?.querySelector("select[data-study-week]") as HTMLSelectElement|null;
    if(!form||!basic||!select)return false;
    if(connectedSelect!==select){connectedSelect?.removeEventListener("change",syncSelection);connectedSelect=select;connectedSelect.addEventListener("change",syncSelection)}
    let host=form.querySelector(".study-week-portal");
@@ -28,7 +28,7 @@ export default function StudyWeekStructure(){
   return()=>{observer.disconnect();connectedSelect?.removeEventListener("change",syncSelection)};
  },[]);
  function choose(value:string){
-  const select=document.querySelector(".study-record-form .study-basic select") as HTMLSelectElement|null;
+  const select=document.querySelector(".study-record-form .study-basic select[data-study-week]") as HTMLSelectElement|null;
   if(!select)return;
   const setter=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value")?.set;
   setter?.call(select,value);select.dispatchEvent(new Event("change",{bubbles:true}));window.dispatchEvent(new CustomEvent("study-week-selected",{detail:{value}}));setSelected(value);

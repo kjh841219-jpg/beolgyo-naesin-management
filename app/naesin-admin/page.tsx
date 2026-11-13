@@ -8,6 +8,7 @@ import FeedbackReportTools from "./FeedbackReportTools";
 import AdminQuizResults from "./AdminQuizResults";
 import StudentLiveQuiz from "./StudentLiveQuiz";
 import AdminHomeworkCompletions from "./AdminHomeworkCompletions";
+import TuitionDashboard from "./TuitionDashboard";
 import "../learning-tools.css";
 import "./admin.css";
 import "./admin-extra.css";
@@ -24,6 +25,7 @@ import "./admin-homework-live.css";
 import "./live-rings.css";
 import "./floating-report.css";
 import "./student-login-controls.css";
+import "./tuition.css";
 
 export const dynamic = "force-dynamic";
 
@@ -33,5 +35,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <AdminGate><StudentAdmin /><StudentLiveQuiz /><AdminHomeworkCompletions /><AdminQuizResults /><FeedbackReportTools /><AdminLearningLinks /><AdminStudyMaterials /><AdminWrongAnswers /></AdminGate>;
+  return <AdminGate><StudentAdmin /><TuitionDashboard /><StudentLiveQuiz /><AdminHomeworkCompletions /><AdminQuizResults /><FeedbackReportTools /><AdminLearningLinks /><AdminStudyMaterials /><AdminWrongAnswers /></AdminGate>;
 }

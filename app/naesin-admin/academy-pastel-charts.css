@@ -1,0 +1,7 @@
+.quiz-bars>div:nth-child(4n+1)>span,.word-daily-bars>div:nth-child(4n+1)>span{background:linear-gradient(#c7e4cf,#8fc9a3);color:#314a3b}
+.quiz-bars>div:nth-child(4n+2)>span,.word-daily-bars>div:nth-child(4n+2)>span{background:linear-gradient(#d1e4f4,#9fc5e8);color:#30465a}
+.quiz-bars>div:nth-child(4n+3)>span,.word-daily-bars>div:nth-child(4n+3)>span{background:linear-gradient(#ddd3ec,#b9a7d9);color:#463a59}
+.quiz-bars>div:nth-child(4n+4)>span,.word-daily-bars>div:nth-child(4n+4)>span{background:linear-gradient(#f8d8cb,#f2b8a0);color:#5c4136}
+.quiz-type-row:nth-child(4n+1)>i em{background:#8fc9a3}.quiz-type-row:nth-child(4n+2)>i em{background:#9fc5e8}.quiz-type-row:nth-child(4n+3)>i em{background:#b9a7d9}.quiz-type-row:nth-child(4n+4)>i em{background:#f2b8a0}
+.quiz-category-title .word,.quiz-category-bars .stack i.word{background:#8fc9a3}.quiz-category-title .passage,.quiz-category-bars .stack i.passage{background:#9fc5e8}
+

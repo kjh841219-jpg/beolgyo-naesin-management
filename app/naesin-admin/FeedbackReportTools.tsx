@@ -149,6 +149,42 @@ function dataUrlToBlob(dataUrl: string) {
     type: header.match(/data:(.*?);/)?.[1] || "image/jpeg",
   });
 }
+function solapiReadyJpeg(source: HTMLCanvasElement) {
+  const maxWidth = 1500,
+    maxHeight = 1440,
+    maxBytes = 195000;
+  let scale = Math.min(1, maxWidth / source.width, maxHeight / source.height),
+    canvas = document.createElement("canvas");
+  const redraw = () => {
+    canvas.width = Math.max(1, Math.floor(source.width * scale));
+    canvas.height = Math.max(1, Math.floor(source.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("솔라피 전송 이미지를 만들지 못했습니다.");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  };
+  redraw();
+  let quality = 0.86,
+    blob = dataUrlToBlob(canvas.toDataURL("image/jpeg", quality));
+  while (blob.size > maxBytes && quality > 0.3) {
+    quality -= 0.07;
+    blob = dataUrlToBlob(canvas.toDataURL("image/jpeg", quality));
+  }
+  while (blob.size > maxBytes && canvas.width > 600) {
+    scale *= 0.88;
+    redraw();
+    quality = 0.72;
+    blob = dataUrlToBlob(canvas.toDataURL("image/jpeg", quality));
+  }
+  if (
+    blob.size > 200000 ||
+    canvas.width > maxWidth ||
+    canvas.height > maxHeight
+  )
+    throw new Error("솔라피 MMS 이미지 제한에 맞게 변환하지 못했습니다.");
+  return blob;
+}
 type KakaoSdk = {
   isInitialized: () => boolean;
   init: (key: string) => void;
@@ -980,13 +1016,7 @@ export default function FeedbackReportTools() {
     c.textAlign = "center";
     c.font = '700 20px "Malgun Gothic",Arial,sans-serif';
     c.fillText("따뜻하게 격려하고 정확하게 분석합니다.", 450, 1445);
-    let quality = 0.86,
-      blob = dataUrlToBlob(canvas.toDataURL("image/jpeg", quality));
-    while (blob.size > 195000 && quality > 0.3) {
-      quality -= 0.08;
-      blob = dataUrlToBlob(canvas.toDataURL("image/jpeg", quality));
-    }
-    return blob;
+    return solapiReadyJpeg(canvas);
   }
   async function createFullReportImage() {
     if (!student) return null;

@@ -899,19 +899,23 @@ function seededQuestions(levelId: LevelId, today: string, attempt: number) {
   const pool = [...dailySets[bankLevel].flatMap((set) => set.questions), ...extraQuestions[bankLevel], ...additionalListeningQuestions[bankLevel], ...(grammarQuestions[bankLevel] ?? []), ...supplementaryQuestions[bankLevel], ...antiRepeatQuestions[bankLevel], ...(bankLevel === "elementary-low" ? elementaryLowExpandedQuestions : expandedQuestionsByLevel[bankLevel]), ...difficultyPool];
   const serial = daySerial(today, attempt);
   const promptVersion = hashSeed(DAILY_MINI_TEST_AUTHORING_PROMPT);
+  // A retry uses its own stable ordering. Previously `day + attempt` made
+  // today's second set identical to tomorrow's first set. Keeping the date
+  // rotation and retry rotation in separate permutations removes that overlap.
+  const selectionSeed = attempt === 0 ? "daily" : `retry-${today}-${attempt}`;
   // 초등 저학년은 부담을 낮춘 9문항(듣기·단어·리딩 각 3문항),
   // 나머지 과정은 12문항(Listening 4 + Grammar 4 + Reading 4)으로 고정합니다.
   const selected = levelId === "elementary-low"
     ? [
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 3, serial, `${levelId}-듣기-${promptVersion}`),
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 3, serial, `${levelId}-단어-${promptVersion}`),
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 3, serial, `${levelId}-듣기-${selectionSeed}-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 3, serial, `${levelId}-단어-${selectionSeed}-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩-${selectionSeed}-${promptVersion}`),
       ]
     : [
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 4, serial, `${levelId}-듣기-${promptVersion}`),
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "문법"), 4, serial, `${levelId}-문법-${promptVersion}`),
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 1, serial, `${levelId}-리딩문맥어휘-${promptVersion}`),
-        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩독해-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "듣기"), 4, serial, `${levelId}-듣기-${selectionSeed}-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "문법"), 4, serial, `${levelId}-문법-${selectionSeed}-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "단어"), 1, serial, `${levelId}-리딩문맥어휘-${selectionSeed}-${promptVersion}`),
+        ...takeWithoutRepeating(pool.filter((question) => question.skill === "리딩"), 3, serial, `${levelId}-리딩독해-${selectionSeed}-${promptVersion}`),
       ];
   return seededShuffle(selected, `${today}-${attempt}-${levelId}-${promptVersion}-question-order`);
 }
@@ -951,13 +955,10 @@ export function DailyMiniTest() {
   const percentageScore = questions.length ? Math.round((score / questions.length) * 100) : 0;
 
   function createNextAttempt(targetLevel: LevelId) {
-    // Attempts are scoped to the date. This prevents an old or abnormally
-    // large saved counter from affecting today's question selection.
     const storageKey = `beolgyo-daily-attempt-${today}-${targetLevel}`;
     try {
-      const stored = window.localStorage.getItem(storageKey);
-      const saved = stored === null ? -1 : Number(stored);
-      const previous = Number.isSafeInteger(saved) && saved >= -1 ? saved : -1;
+      const saved = Number(window.localStorage.getItem(storageKey) ?? "0");
+      const previous = Number.isSafeInteger(saved) && saved >= 0 ? saved : 0;
       const next = previous + 1;
       window.localStorage.setItem(storageKey, String(next));
       setAttemptSerial(next);
@@ -967,8 +968,18 @@ export function DailyMiniTest() {
   }
 
   useEffect(() => {
-    createNextAttempt(levelId);
-  }, [levelId]);
+    // Opening or refreshing the page must not consume a new set. The old
+    // behavior advanced the counter on every visit, which was the main source
+    // of apparent daily duplicates. Only the explicit "새 문제 풀기" button
+    // advances the attempt.
+    const storageKey = `beolgyo-daily-attempt-${today}-${levelId}`;
+    try {
+      const saved = Number(window.localStorage.getItem(storageKey) ?? "0");
+      setAttemptSerial(Number.isSafeInteger(saved) && saved >= 0 ? saved : 0);
+    } catch {
+      setAttemptSerial(0);
+    }
+  }, [levelId, today]);
 
   function changeLevel(next: LevelId) {
     setLevelId(next);

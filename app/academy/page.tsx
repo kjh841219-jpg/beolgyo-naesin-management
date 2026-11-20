@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ConsultationForm } from "../ConsultationForm";
 import { LevelTest } from "../LevelTest";
 import { CallbackWidget } from "../CallbackWidget";
@@ -10,6 +11,7 @@ import { AcademyContactCard, FooterContact } from "../AcademyContact";
 import { AcademyCalendar } from "../AcademyCalendar";
 import { DailyMiniTest } from "../DailyMiniTest";
 import { CompactSchoolScheduleSearch } from "../CompactSchoolScheduleSearch";
+import "./academy-fit.css";
 
 const elementaryPoints = [
   "파닉스부터 소리와 글자 연결",
@@ -48,15 +50,18 @@ const faqs = [
 
 export default function Home() {
   return (
-    <main>
+    <main className="academy-fit">
       <header className="site-header">
-        <a className="brand" href="/" aria-label="벌교미래엔영어학원 메인">
-          <span className="brand-mark">M</span>
-          <span>
-            벌교미래엔
-            <small>영어학원</small>
-          </span>
-        </a>
+        <div className="academy-fit-brand-group">
+          <a className="brand" href="/academy" aria-label="벌교미래엔영어 메인">
+            <span className="brand-mark">M</span>
+            <span>벌교미래엔영어</span>
+          </a>
+          <div className="academy-fit-lockup">
+            <Image src="/academyfit-ai-symbol.png" alt="" width={48} height={48} />
+            <span>아카데미핏 AI</span>
+          </div>
+        </div>
         <nav aria-label="주요 메뉴">
           <a className="nav-level-test" href="#level-test">무료 레벨테스트</a>
           <a className="nav-cta" href="#consult">상담예약</a>
@@ -102,8 +107,10 @@ export default function Home() {
               <p>막히는 문법 개념부터 이해하고<br />독해 문제에 연결해요.</p>
             </div>
           </div>
-          <div className="floating-note note-one"><span>✓</span> 이해 가능한 단계부터</div>
-          <div className="floating-note note-two"><span>↗</span> 작은 성취를 자신감으로</div>
+          <div className="hero-visual-notes">
+            <div className="floating-note note-one"><span>✓</span> 이해 가능한 단계부터</div>
+            <div className="floating-note note-two"><span>↗</span> 작은 성취를 자신감으로</div>
+          </div>
         </div>
       </section>
 
@@ -325,14 +332,16 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="academy-callback">
+        <CallbackWidget />
+      </div>
+
       <footer>
         <a className="brand footer-brand" href="#top"><span className="brand-mark">M</span><span>벌교미래엔<small>영어학원</small></span></a>
         <p>아이에게는 영어 자신감을, 부모님에게는 교육 방향에 대한 확신을.</p>
         <FooterContact />
       </footer>
 
-      <a className="mobile-cta" href="#consult">학생 상담예약</a>
-      <CallbackWidget />
     </main>
   );
 }

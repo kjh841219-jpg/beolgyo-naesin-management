@@ -51,7 +51,7 @@ export default function AdminGate({ children }: { children: ReactNode }) {
 
   if (!ready) return <main className="admin-gate"><div className="admin-login-card"><p>관리자 화면을 준비하고 있습니다…</p></div></main>;
   if (!authenticated) return <main className="admin-gate"><form className="admin-login-card" onSubmit={login}>
-    <a href="https://vercel-deploy-mauve-one-18.vercel.app/" className="admin-login-brand"><span>M</span><b>벌교미래엔 영어학원</b></a>
+    <a href="/academy" className="admin-login-brand"><span>M</span><b>벌교미래엔 영어학원</b></a>
     <p>LEARNING OFFICE</p><h1>관리자 로그인</h1>
     <small>학생별 내신 기록과 학부모 메시지를 관리합니다.</small>
     <label><span>관리자 비밀번호</span><input autoFocus required type="password" inputMode="numeric" maxLength={4} value={password} onChange={(event) => setPassword(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="비밀번호 4자리" /></label>

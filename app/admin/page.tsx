@@ -1,8 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { defaultLandingContent, LandingContent } from "../content";
 import MonthlyDailyReport from "./MonthlyDailyReport";
+import { mergeKakaoRoomSources, validateKakaoRooms } from "../kakao-room-config";
+import "./academy-fit-admin.css";
 
 type Consultation = {
   id: string; createdAt: string; studentName: string; phone: string; grade: string;
@@ -20,7 +22,10 @@ type DailyResult = {
 };
 type ViewState = "checking" | "login" | "editor";
 type SolapiStatus = { smsConfigured: boolean; kakaoConfigured: boolean; balance?: number; point?: number; message: string };
-type SendStatus = { state: "sending" | "success" | "error"; message: string };
+type SendStatus = { state: "sending" | "success" | "error" | "requested"; message: string };
+type KakaoRoomMap = Record<string, string>;
+
+const KAKAO_ROOM_STORAGE_KEY = "beolgyo-kakao-room-map-v1";
 
 const koreanDate = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
@@ -126,6 +131,7 @@ export default function AdminPage() {
   const [consultationQuery, setConsultationQuery] = useState("");
   const [levelQuery, setLevelQuery] = useState("");
   const [dailyQuery, setDailyQuery] = useState("");
+  const [dailyResultsOpen, setDailyResultsOpen] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [calendarSaving, setCalendarSaving] = useState(false);
@@ -133,6 +139,13 @@ export default function AdminPage() {
   const [solapiStatus, setSolapiStatus] = useState<SolapiStatus | null>(null);
   const [sendStatuses, setSendStatuses] = useState<Record<string, SendStatus>>({});
   const [dailySmsDrafts, setDailySmsDrafts] = useState<Record<string, string>>({});
+  const [kakaoRooms, setKakaoRooms] = useState<KakaoRoomMap>({});
+  const [kakaoRoomDialog, setKakaoRoomDialog] = useState<{ item: DailyResult; mode: "test" | "compose" | "send" | "save" } | null>(null);
+  const [kakaoRoomInput, setKakaoRoomInput] = useState("");
+  const [kakaoBrowserRooms, setKakaoBrowserRooms] = useState<KakaoRoomMap>({});
+  const [kakaoSyncMessage, setKakaoSyncMessage] = useState("");
+  const [kakaoSyncSaving, setKakaoSyncSaving] = useState(false);
+  const kakaoLoadVersion = useRef(0);
 
   function updateSendStatus(key: string, status: SendStatus) {
     setSendStatuses((current) => ({ ...current, [key]: status }));
@@ -184,6 +197,50 @@ export default function AdminPage() {
       })
       .catch(() => setView("login"));
   }, []);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(KAKAO_ROOM_STORAGE_KEY);
+      if (saved) {
+        const rooms = validateKakaoRooms(JSON.parse(saved));
+        setKakaoBrowserRooms(rooms);
+        setKakaoRooms(current => mergeKakaoRoomSources(rooms, current));
+      }
+    } catch {
+      setKakaoRooms({});
+    }
+  }, []);
+
+  async function loadSharedKakaoRooms() {
+    const version = ++kakaoLoadVersion.current;
+    try {
+      const response = await fetch("/api/admin/kakao-rooms", { cache: "no-store", credentials: "include", signal: AbortSignal.timeout(15000) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "공통 연결을 불러오지 못했습니다.");
+      const rooms = validateKakaoRooms(data.rooms);
+      if (version !== kakaoLoadVersion.current) return;
+      setKakaoRooms(current => mergeKakaoRoomSources(current, rooms));
+      setKakaoSyncMessage(`공통 연결 ${Object.keys(rooms).length}개를 불러왔습니다. 기존 브라우저에만 저장한 연결은 아래 공통 저장 버튼으로 옮겨 주세요.`);
+    } catch (error) {
+      if (version === kakaoLoadVersion.current) setKakaoSyncMessage(error instanceof Error ? error.message : "공통 연결 확인에 실패했습니다. 기존 브라우저 연결은 보존했습니다.");
+    }
+  }
+
+  useEffect(() => { if (view === "editor") void loadSharedKakaoRooms(); }, [view]);
+
+  async function importBrowserKakaoRooms() {
+    setKakaoSyncSaving(true);
+    ++kakaoLoadVersion.current;
+    try {
+      const response = await fetch("/api/admin/kakao-rooms", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rooms: kakaoBrowserRooms }), signal: AbortSignal.timeout(30000) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "공통 저장에 실패했습니다.");
+      const rooms = validateKakaoRooms(data.rooms);
+      setKakaoRooms(current => mergeKakaoRoomSources(current, rooms));
+      setKakaoSyncMessage(data.message);
+    } catch (error) { setKakaoSyncMessage(error instanceof Error ? error.message : "공통 저장에 실패했습니다. 기존 브라우저 연결은 보존했습니다."); }
+    finally { setKakaoSyncSaving(false); }
+  }
 
   useEffect(() => {
     if (view !== "editor") return;
@@ -410,10 +467,98 @@ export default function AdminPage() {
     }
   }
 
-  function sendDailyKakao(item: DailyResult) {
+  function sendDailyKakaoShare(item: DailyResult) {
     const statusKey = `daily-${item.id}-kakao`;
     const link = "https://vercel-deploy-mauve-one-18.vercel.app/academy#daily-mini-test";
     openKakaoShare(statusKey, dailyMessage(item, "sms"), link);
+  }
+
+  function saveKakaoRoom(item: DailyResult) {
+    const key = item.phone || item.studentName;
+    setKakaoRoomInput(kakaoRooms[key] ?? "");
+    setKakaoRoomDialog({ item, mode: "save" });
+  }
+
+  async function confirmKakaoRoom(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const room = kakaoRoomInput.trim();
+    if (!room || !kakaoRoomDialog) return;
+    const { item, mode } = kakaoRoomDialog;
+    const key = item.phone || item.studentName;
+    setKakaoSyncSaving(true);
+    ++kakaoLoadVersion.current;
+    try {
+      const response = await fetch("/api/admin/kakao-rooms", { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rooms: { [key]: room } }), signal: AbortSignal.timeout(15000) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "공통 연결을 저장하지 못했습니다.");
+      const shared = validateKakaoRooms(data.rooms);
+      const next = mergeKakaoRoomSources(kakaoRooms, shared);
+      setKakaoRooms(next);
+      setKakaoBrowserRooms(current => ({ ...current, [key]: room }));
+      try { window.localStorage.setItem(KAKAO_ROOM_STORAGE_KEY, JSON.stringify(next)); } catch { /* Shared storage still works if browser storage is unavailable. */ }
+      setKakaoRoomDialog(null);
+      setKakaoSyncMessage(data.message);
+      setMessage(`${item.studentName} 학생의 '${room}' 대화방을 공통 저장했습니다. 다른 브라우저에서도 같은 연결을 불러옵니다.`);
+      if (mode !== "save") setMessage(`공통 연결을 저장했습니다. 해당 결과의 '${mode === "send" ? "카톡 보내기" : mode === "test" ? "방 찾기 시험" : "입력만 시험"}'를 눌러 실행해 주세요.`);
+    } catch (error) {
+      setKakaoSyncMessage(error instanceof Error ? error.message : "공통 저장에 실패했습니다. 기존 연결은 변경하지 않았습니다.");
+    } finally {
+      setKakaoSyncSaving(false);
+    }
+  }
+
+  function openKakaoPc(item: DailyResult, mode: "test" | "compose" | "send") {
+    const key = item.phone || item.studentName;
+    const room = kakaoRooms[key];
+    setKakaoRoomInput(room ?? "");
+    setKakaoRoomDialog({ item, mode });
+  }
+
+  function kakaoPcUri(item: DailyResult, mode: "test" | "compose" | "send", room: string) {
+    const text = dailySmsDrafts[item.id] || dailyMessage(item, "sms");
+    const identifier = (value: string) => Array.from(new TextEncoder().encode(value), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    const query = new URLSearchParams({
+      room, mode, text: mode === "test" ? "" : text,
+      student: item.studentName,
+      studentKey: identifier(`${item.studentName}|${item.phone.replace(/\D/g, "")}`),
+      requestId: `daily-${identifier(item.id)}`,
+    });
+    return `beolgyo-kakao://${mode}?${query.toString()}`;
+  }
+
+  function requestKakaoPcLink(event: MouseEvent<HTMLAnchorElement>, item: DailyResult, mode: "test" | "compose" | "send", room: string) {
+    const statusKey = `daily-${item.id}-kakao-pc`;
+    // Use a genuine, user-clicked link. Do not navigate via timers, hidden frames,
+    // synthetic clicks, or JavaScript location assignment, and never auto-retry.
+    if (event.currentTarget.href.length > 1900) {
+      event.preventDefault();
+      updateSendStatus(statusKey, { state: "error", message: "Windows 연결 주소가 너무 길어 실행하지 않았습니다. 대화방 이름이나 결과 문구를 줄여야 합니다. 내용은 잘라서 보내지 않았습니다." });
+      return;
+    }
+    updateSendStatus(statusKey, {
+      state: "requested",
+      message: mode === "test"
+        ? `'${room}' 대화방 찾기 링크를 선택했습니다. Edge·Chrome의 외부 앱 열기 확인창에서 열기를 승인해 주세요. 이 표시는 PC 도구의 실행 확인이 아닙니다.`
+        : mode === "send"
+          ? `'${room}' 방에 자동 입력·전송을 요청했습니다. Edge·Chrome에서 외부 앱 열기를 승인해 주세요. 최초 1회 PC 연결 도구에서 받는 방을 확인해 주세요. 웹 표시만으로 전송 성공을 보장하지 않으며, 같은 결과는 중복 전송하지 않습니다.`
+          : `'${room}' 방에 입력만 시험하도록 요청했습니다. 전송키는 누르지 않습니다.`,
+    });
+  }
+
+  function renderKakaoPcAction(item: DailyResult, mode: "test" | "compose" | "send", label: string, className: string) {
+    const room = kakaoRooms[item.phone || item.studentName];
+    if (!room) return <button className={className} type="button" onClick={() => openKakaoPc(item, mode)}>{label}</button>;
+    return <a className={`${className} admin-kakao-native-link`} href={kakaoPcUri(item, mode, room)} onClick={(event) => requestKakaoPcLink(event, item, mode, room)} title={mode === "send" ? "PC 도구가 받는 방을 확인한 뒤 자동 입력·전송합니다" : undefined}>{label}</a>;
+  }
+
+  async function copyAdminAddress() {
+    const address = `${window.location.origin}/admin`;
+    try {
+      await navigator.clipboard.writeText(address);
+      setMessage("관리자 주소를 복사했습니다. Microsoft Edge 또는 Google Chrome을 별도로 실행한 후 주소창에 붙여넣어 주세요.");
+    } catch {
+      setMessage(`주소 복사를 지원하지 않는 환경입니다. Edge 또는 Chrome 주소창에 직접 입력해 주세요: ${address}`);
+    }
   }
 
   async function sendDailySms(item: DailyResult) {
@@ -509,7 +654,7 @@ export default function AdminPage() {
         </header>
 
         <nav className="admin-section-tabs" aria-label="관리 메뉴">
-          <strong>빠른 관리</strong><a href="#admin-consultations">상담 신청자</a><a href="#admin-level-results">레벨테스트 결과</a><a href="#admin-daily-results">DAILY 결과</a><a href="#admin-monthly-report">월간 평가표</a><a href="#admin-daily-message">문자·카톡 설정</a><a href="#admin-profile">기본정보</a><a href="#admin-calendar">학원일정</a>
+          <strong>빠른 관리</strong><a href="#admin-consultations">상담 신청자</a><a href="#admin-level-results">레벨테스트 결과</a><a href="#admin-daily-results" onClick={() => setDailyResultsOpen(true)}>DAILY 결과</a><a href="#admin-monthly-report">월간 평가표</a><a href="#admin-daily-message">문자·카톡 설정</a><a href="#admin-profile">기본정보</a><a href="#admin-calendar">학원일정</a>
         </nav>
 
         <section className="admin-record-summary">
@@ -592,21 +737,42 @@ export default function AdminPage() {
           </div>
         )}
 
-        <section className="admin-record-card" id="admin-daily-results">
-          <div className="admin-record-heading">
-            <div><p>DAILY MINI TEST RESULTS</p><h2>DAILY 미니테스트 결과 관리</h2><small>학생별 점수와 듣기·단어·문법·리딩 결과를 확인하고 메시지를 전송합니다.</small></div>
-            <div className="admin-record-toolbar">
+        <section className={`admin-record-card admin-daily-results-card ${dailyResultsOpen ? "is-open" : "is-collapsed"}`} id="admin-daily-results">
+          <div className="admin-record-heading admin-record-collapsible-heading">
+            <div><p>DAILY MINI TEST RESULTS</p><h2>DAILY 미니테스트 결과 관리</h2><small>학생별 점수와 듣기·단어·문법·리딩 결과를 확인하고 메시지를 전송합니다.</small><strong className="admin-daily-result-count">저장된 결과 {dailyResults.length}건</strong></div>
+            <button className="admin-record-toggle" type="button" aria-expanded={dailyResultsOpen} aria-controls="admin-daily-results-content" onClick={() => setDailyResultsOpen((open) => !open)}><span>{dailyResultsOpen ? "결과 관리 접기" : "전체 결과 한 번에 열기"}</span><b aria-hidden="true">{dailyResultsOpen ? "▲" : "▼"}</b></button>
+          </div>
+          {dailyResultsOpen && <div className="admin-record-collapsible-content" id="admin-daily-results-content">
+            <aside className="admin-kakao-browser-help" aria-label="Edge와 Chrome 카카오톡 PC 연결 안내">
+              <strong>Windows PC · Microsoft Edge / Google Chrome 공통 연결</strong>
+              <p>별도로 실행한 Edge 또는 Chrome에서 사용하세요. ChatGPT 등 앱 안의 브라우저에서는 PC 연결 도구 실행이 제한될 수 있습니다.</p>
+              <details>
+                <summary>카톡이 열리지 않을 때 · 연결 방법 보기</summary>
+                <ol>
+                  <li>이 PC에 <a href="/downloads/beolgyo-kakao-helper.zip" download>연결 도구</a>를 설치하고 PC 카카오톡에 로그인해 주세요. PC에 설치하면 Edge와 Chrome에서 같은 도구를 사용합니다.</li>
+                  <li>학생의 연결 설정에서 정확한 대화방 이름을 공통 저장하세요. 같은 관리자사이트에 로그인하면 Edge·Chrome에서도 불러옵니다. 예전 브라우저 연결은 아래 버튼으로 공통 저장에 옮길 수 있습니다.</li>
+                  <li>먼저 ‘방 찾기 시험’으로 받는 방을 확인하세요. 메시지는 전송하지 않습니다.</li>
+                  <li>‘카톡 보내기’를 누른 뒤 브라우저의 외부 앱 열기 확인창에서 ‘열기’를 선택하세요. 최초 학생·방 연결 확인 후에는 자동 입력·전송을 시도합니다.</li>
+                </ol>
+                <p>아무 반응이 없어도 전송 버튼을 연속으로 누르지 마세요. 외부 앱 열기 확인창과 도구 설치 상태를 먼저 확인해 주세요. 웹의 ‘요청’ 표시는 전송 완료가 아닙니다.</p>
+              </details>
+              <button type="button" onClick={copyAdminAddress}>Edge·Chrome에서 열 관리자 주소 복사</button>
+              <button type="button" onClick={importBrowserKakaoRooms} disabled={kakaoSyncSaving || !Object.keys(kakaoBrowserRooms).length}>{kakaoSyncSaving ? "공통 연결 저장 중…" : `이 브라우저 연결 ${Object.keys(kakaoBrowserRooms).length}개를 공통 저장`}</button>
+              <button type="button" onClick={() => void loadSharedKakaoRooms()} disabled={kakaoSyncSaving}>공통 연결 다시 불러오기</button>
+              {kakaoSyncMessage && <p role="status" aria-live="polite">{kakaoSyncMessage}</p>}
+            </aside>
+            <div className="admin-record-toolbar admin-daily-results-toolbar">
               <input value={dailyQuery} onChange={(e) => setDailyQuery(e.target.value)} placeholder="이름·연락처·단계 검색" aria-label="DAILY 결과 검색" />
               <button type="button" onClick={loadRecords}>{recordsLoading ? "불러오는 중…" : "새로고침"}</button>
               <a href="/api/admin/export/daily-results">엑셀 파일 다운로드</a>
             </div>
-          </div>
-          <div className="admin-record-table-wrap">
+          <div className="admin-record-table-wrap admin-daily-results-table-wrap">
             <table className="admin-record-table"><thead><tr><th>응시일</th><th>학생</th><th>연락처</th><th>단계</th><th>총점</th><th>영역별 결과</th><th>결과 전송</th></tr></thead>
-              <tbody>{filteredDailyResults.map((item) => { const sms = sendStatuses[`daily-${item.id}-sms`]; const kakao = sendStatuses[`daily-${item.id}-kakao`]; const draft = dailySmsDrafts[item.id]; return <tr key={item.id}><td>{item.testDate}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.levelLabel}</td><td><b>{item.score}/{item.total}</b></td><td>듣기 {item.listening}/{item.listeningTotal} · 단어 {item.vocabulary}/{item.vocabularyTotal}{(item.grammarTotal ?? 0) > 0 ? ` · 문법 ${item.grammar ?? 0}/${item.grammarTotal}` : ""} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendDailySms(item)}>{sms?.state === "sending" ? "솔라피 발송 중…" : "솔라피 문자보내기"}</button><button type="button" onClick={() => sendDailyKakao(item)}>카톡 보내기</button><button className="admin-message-generate" type="button" onClick={() => generateDailySmsDraft(item)}>문자내용 생성</button>{draft && <textarea className="admin-message-preview" aria-label={`${item.studentName} 문자내용 미리보기`} value={draft} readOnly rows={14} />}{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡: {kakao.message}</p>}</div></td></tr>; })}
+<tbody>{filteredDailyResults.map((item) => { const sms = sendStatuses[`daily-${item.id}-sms`]; const kakao = sendStatuses[`daily-${item.id}-kakao`]; const kakaoPc = sendStatuses[`daily-${item.id}-kakao-pc`]; const draft = dailySmsDrafts[item.id]; const room = kakaoRooms[item.phone || item.studentName]; return <tr key={item.id}><td>{item.testDate}</td><td><b>{item.studentName}</b></td><td><a href={`tel:${item.phone}`}>{item.phone}</a></td><td>{item.levelLabel}</td><td><b>{item.score}/{item.total}</b></td><td>듣기 {item.listening}/{item.listeningTotal} · 단어 {item.vocabulary}/{item.vocabularyTotal}{(item.grammarTotal ?? 0) > 0 ? ` · 문법 ${item.grammar ?? 0}/${item.grammarTotal}` : ""} · 리딩 {item.reading}/{item.readingTotal}</td><td><div className="admin-result-send"><button type="button" disabled={sms?.state === "sending"} onClick={() => sendDailySms(item)}>{sms?.state === "sending" ? "솔라피 발송 중…" : "솔라피 문자보내기"}</button>{renderKakaoPcAction(item, "send", "카톡 보내기", "admin-kakao-pc-compose")}<details className="admin-kakao-settings"><summary>연결 설정</summary><div><p>처음 한 번만 대화방 이름을 저장하세요. 연결 도구는 Windows PC에서 사용합니다.</p><button className="admin-kakao-room-save" type="button" onClick={() => saveKakaoRoom(item)}>{room ? "대화방 변경" : "대화방 저장"}</button>{renderKakaoPcAction(item, "test", "방 찾기 시험", "admin-kakao-room-test")}{renderKakaoPcAction(item, "compose", "입력만 시험", "admin-kakao-room-test")}<a href="/downloads/beolgyo-kakao-helper.zip" download>연결도구 다운로드</a><button className="admin-kakao-share" type="button" onClick={() => sendDailyKakaoShare(item)}>기존 카톡 공유 사용</button>{room && <p>연결 대화방: <b>{room}</b></p>}</div></details><button className="admin-message-generate" type="button" onClick={() => generateDailySmsDraft(item)}>문자내용 생성</button>{draft && <textarea className="admin-message-preview" aria-label={`${item.studentName} 문자내용 미리보기`} value={draft} readOnly rows={14} />}{sms && <p className={`admin-send-feedback ${sms.state}`}>문자: {sms.message}</p>}{kakao && <p className={`admin-send-feedback ${kakao.state}`}>카카오톡 공유: {kakao.message}</p>}{kakaoPc && <p className={`admin-send-feedback ${kakaoPc.state}`}>카카오톡 PC: {kakaoPc.message}</p>}</div></td></tr>; })}
               {!filteredDailyResults.length && <tr><td colSpan={7} className="admin-record-empty">저장된 DAILY 미니테스트 결과가 없습니다.</td></tr>}</tbody>
             </table>
           </div>
+          </div>}
         </section>
 
         <MonthlyDailyReport items={dailyResults} />
@@ -731,6 +897,19 @@ export default function AdminPage() {
             <div><a href="/academy" target="_blank">랜딩페이지 미리보기</a><button type="submit" disabled={saving}>{saving ? "전체 내용 저장 중…" : "전체 변경 내용 저장"} <b>→</b></button></div>
           </div>
         </form>
+        {kakaoRoomDialog && <div className="admin-kakao-dialog-backdrop">
+          <section className="admin-kakao-dialog" role="dialog" aria-modal="true" aria-labelledby="kakao-room-title">
+            <h2 id="kakao-room-title">카카오톡 대화방 연결</h2>
+            <p>{kakaoRoomDialog.item.studentName} 학생의 카카오톡 대화방 이름을 정확히 입력해 주세요. 처음 한 번만 저장하면 됩니다.</p>
+            <form onSubmit={confirmKakaoRoom}>
+              <label htmlFor="kakao-room-name">카카오톡 대화방 이름</label>
+              <input id="kakao-room-name" value={kakaoRoomInput} onChange={(e) => setKakaoRoomInput(e.target.value)} autoFocus required maxLength={120} placeholder="카카오톡에 표시되는 방 이름" />
+              <p>카톡 보내기는 입력 후 자동 전송합니다. PC 연결 도구에서도 최초 1회 받는 방을 확인하며, 같은 결과의 중복 발송은 차단합니다.</p>
+              {kakaoSyncMessage && <p role="status">{kakaoSyncMessage}</p>}
+              <div><button type="button" onClick={() => setKakaoRoomDialog(null)} disabled={kakaoSyncSaving}>취소</button><button type="submit" disabled={!kakaoRoomInput.trim() || kakaoSyncSaving}>{kakaoSyncSaving ? "공통 저장 중…" : "대화방 공통 저장"}</button></div>
+            </form>
+          </section>
+        </div>}
       </div>
     </main>
   );

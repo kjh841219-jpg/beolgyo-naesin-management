@@ -15,6 +15,7 @@ import "./study-log.css";
 import "./study-dashboard.css";
 import "./study-analysis.css";
 import "./study-login-override.css";
+import "./study-mobile-login.css";
 import "./wrong-answer.css";
 import "./study-materials.css";
 import "./material-solving.css";
@@ -26,6 +27,7 @@ import "./final-save.css";
 import "./study-week-structure.css";
 import "./study-extra-scores.css";
 import "./student-cumulative.css";
+import "./academy-pastel-charts.css";
 
 export const metadata: Metadata = { title: "나의 내신 학습기록 | 벌교미래엔영어학원", description: "오늘 공부한 내용을 직접 확인하고 다음 학습을 계획하는 학생용 내신 학습기록표" };
 export default function StudyLogPage(){return <><StudentStudyLog/><StudyExtraScores/><StudyWeekStructure/><StudentCumulativeRecords/><HomeworkSubmission/><HomeworkCompletion/><StudentLearningLinks/><StudentStudyMaterials/><LearningResultUpload/><WrongAnswerNotebook/><StudentRecordSaveComplete/></>}

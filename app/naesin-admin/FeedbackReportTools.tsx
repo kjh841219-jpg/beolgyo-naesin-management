@@ -66,6 +66,15 @@ const fields = [
   ["문제풀이", "problemSolving"],
   ["오답노트", "wrongNotebook"],
 ] as const;
+const academyPastels = [
+  "#8fc9a3",
+  "#9fc5e8",
+  "#b9a7d9",
+  "#f2b8a0",
+  "#e9d58a",
+  "#91d5c1",
+  "#dfa6b3",
+] as const;
 const examTerms = [
   "1학기 중간고사",
   "1학기 기말고사",
@@ -112,11 +121,23 @@ function latestByStudyDate(items: RecordItem[]) {
     return true;
   });
 }
-function weekNumber(value: string) {
-  if (value.includes("1주차") || value.startsWith("4주 전")) return 1;
+function weekNumber(value: string, taskScores?: string | Record<string, number>) {
+  // A student-selected non-default week is authoritative. Older records were
+  // saved with the default "4주 전" value, so only those need label recovery.
   if (value.includes("2주차") || value.startsWith("3주 전")) return 2;
   if (value.includes("3주차") || value.startsWith("2주 전")) return 3;
   if (value.includes("4주차") || value.startsWith("1주 전")) return 4;
+  if (value.includes("1주차") && !value.startsWith("4주 전")) return 1;
+  let labels = "";
+  try {
+    const parsed = typeof taskScores === "string" ? JSON.parse(taskScores) : taskScores;
+    labels = parsed && typeof parsed === "object" ? Object.keys(parsed).join(" ") : "";
+  } catch {}
+  if (/두 번째 단원 문법|마지막 학교 프린트물/.test(labels)) return 4;
+  if (/두 번째 단원 및 교과서 외부지문|외부지문/.test(labels)) return 3;
+  if (/첫 번째 단원 문법|그래머 인사이트/.test(labels)) return 2;
+  if (/첫 번째 단원 (단어|대화문|본문) 암기/.test(labels)) return 1;
+  if (value.includes("1주차") || value.startsWith("4주 전")) return 1;
   return 0;
 }
 function dataUrlToBlob(dataUrl: string) {
@@ -360,15 +381,15 @@ export default function FeedbackReportTools() {
     datedRecords = useMemo(() => latestByStudyDate(records), [records]),
     examRecords = useMemo(
       () =>
-        datedRecords.filter(
+        records.filter(
           (item) => (item.examTerm || "시험 미지정") === selectedExamTerm,
         ),
-      [datedRecords, selectedExamTerm],
+      [records, selectedExamTerm],
     ),
     weekRecords = useMemo(
       () =>
         examRecords.filter(
-          (item) => weekNumber(item.examWeek) === selectedWeek,
+          (item) => weekNumber(item.examWeek, item.taskScores) === selectedWeek,
         ),
       [examRecords, selectedWeek],
     ),
@@ -396,8 +417,9 @@ export default function FeedbackReportTools() {
     () =>
       [1, 2, 3, 4].map((week) => {
         const items = examRecords.filter(
-            (item) => weekNumber(item.examWeek) === week,
+            (item) => weekNumber(item.examWeek, item.taskScores) === week,
           ),
+          days = new Set(items.map((item) => item.studyDate)).size,
           recent = items[0],
           taskScores = Object.fromEntries(
             Object.entries(parsedTaskScores(recent)).filter(
@@ -407,6 +429,7 @@ export default function FeedbackReportTools() {
         return {
           label: `${week}주차`,
           count: items.length,
+          days,
           rate: items.length
             ? Math.round(
                 items.reduce((sum, item) => sum + recordAverage(item), 0) /
@@ -428,7 +451,7 @@ export default function FeedbackReportTools() {
   );
   const weekRecordText = useMemo(
     () =>
-      `[${selectedExamTerm}]\n${weekMetrics.map((item) => `• ${item.label}: ${item.count ? `${item.rate}% (${item.count}일) · ${item.detail}` : "아직 기록 없음"}`).join("\n")}`,
+      `[${selectedExamTerm}]\n${weekMetrics.map((item) => `• ${item.label}: ${item.count ? `${item.rate}% (${item.days}일 · ${item.count}회 기록) · ${item.detail}` : "아직 기록 없음"}`).join("\n")}`,
     [selectedExamTerm, weekMetrics],
   );
   useEffect(() => {
@@ -453,7 +476,11 @@ export default function FeedbackReportTools() {
       ring.style.setProperty("--rate", `${clamp(item.rate) * 3.6}deg`);
       value.textContent = `${item.rate}%`;
       label.textContent = item.label;
-      count.textContent = item.count ? `${item.count}일 기록` : "기록 없음";
+      count.textContent = item.count
+        ? item.count === item.days
+          ? `${item.days}일 기록`
+          : `${item.days}일 · ${item.count}회 기록`
+        : "기록 없음";
       ring.appendChild(value);
       article.append(ring, label, count);
       grid.appendChild(article);
@@ -586,6 +613,41 @@ export default function FeedbackReportTools() {
       }),
     [selectedRecords],
   );
+  const trendRecords = useMemo(() => {
+    const source = period === "monthly" ? examRecords : weekRecords;
+    return [...latestByStudyDate(source)]
+      .sort((a, b) => a.studyDate.localeCompare(b.studyDate))
+      .slice(-10);
+  }, [examRecords, weekRecords, period]);
+  const trendPoints = useMemo(
+    () =>
+      trendRecords.map((item, index) => ({
+        x:
+          trendRecords.length === 1
+            ? 300
+            : 55 + (index * 500) / (trendRecords.length - 1),
+        y: 215 - recordAverage(item) * 1.6,
+        value: recordAverage(item),
+        date: item.studyDate.slice(5),
+      })),
+    [trendRecords],
+  );
+  const learningContentMetrics = useMemo(() => {
+    const totals = new Map<string, { sum: number; count: number }>();
+    for (const item of trendRecords) {
+      for (const [label, value] of Object.entries(parsedTaskScores(item))) {
+        if (label.startsWith("_")) continue;
+        const current = totals.get(label) || { sum: 0, count: 0 };
+        current.sum += Number(value || 0);
+        current.count += 1;
+        totals.set(label, current);
+      }
+    }
+    return [...totals.entries()].map(([label, value]) => ({
+      label,
+      value: Math.round(value.sum / value.count),
+    }));
+  }, [trendRecords]);
   const detailedFeedback = useMemo(
     () =>
       detailedMetrics
@@ -676,7 +738,7 @@ export default function FeedbackReportTools() {
     detailTitle.textContent = "항목별 상세 분석";
     detailTitle.style.cssText = radarTitle.style.cssText;
     details.appendChild(detailTitle);
-    for (const item of detailedMetrics) {
+    for (const [metricIndex, item] of detailedMetrics.entries()) {
       const row = document.createElement("div"),
         head = document.createElement("div"),
         bar = document.createElement("i"),
@@ -687,7 +749,7 @@ export default function FeedbackReportTools() {
       head.innerHTML = `<b>${item.label}</b><span>${item.value}% · ${item.status}</span>`;
       bar.style.cssText =
         "display:block;height:9px;margin-top:6px;border-radius:999px;background:#e3ebf4;overflow:hidden";
-      fill.style.cssText = `display:block;width:${item.value}%;height:100%;background:${item.value >= 85 ? "#178767" : item.value >= 60 ? "#245edb" : "#e0922f"}`;
+      fill.style.cssText = `display:block;width:${item.value}%;height:100%;border-radius:999px;background:${academyPastels[metricIndex % academyPastels.length]}`;
       bar.appendChild(fill);
       row.append(head, bar);
       details.appendChild(row);
@@ -893,13 +955,13 @@ export default function FeedbackReportTools() {
     c.font = '700 22px "Malgun Gothic",Arial,sans-serif';
     c.fillText("항목별 상세 분석", 60, 725);
     let y = 775;
-    for (const item of detailedMetrics) {
+    for (const [metricIndex, item] of detailedMetrics.entries()) {
       c.fillStyle = "#14233d";
       c.font = '700 17px "Malgun Gothic",Arial,sans-serif';
       c.fillText(item.label, 65, y);
       c.fillStyle = "#dbe5f2";
       c.fillRect(200, y - 16, 490, 18);
-      c.fillStyle = item.value >= 85 ? "#178767" : item.value >= 60 ? "#245edb" : "#e0922f";
+      c.fillStyle = academyPastels[metricIndex % academyPastels.length];
       c.fillRect(200, y - 16, (490 * item.value) / 100, 18);
       c.fillStyle = "#14233d";
       c.fillText(`${item.value}% · ${item.status}`, 710, y);
@@ -1329,9 +1391,57 @@ export default function FeedbackReportTools() {
               </article>
             ))}
           </div>
+          <section className="feedback-learning-trend">
+            <h3>날짜별 학습량 · 꺾은선 그래프</h3>
+            {trendPoints.length ? (
+              <div className="feedback-trend-scroll">
+                <svg
+                  viewBox="0 0 610 255"
+                  role="img"
+                  aria-label={`${student?.name || "학생"} 날짜별 학습량 꺾은선 그래프`}
+                >
+                  {[0, 25, 50, 75, 100].map((value) => (
+                    <g key={value}>
+                      <line x1="48" y1={215 - value * 1.6} x2="570" y2={215 - value * 1.6} />
+                      <text x="40" y={219 - value * 1.6} textAnchor="end">{value}</text>
+                    </g>
+                  ))}
+                  <polyline points={trendPoints.map((point) => `${point.x},${point.y}`).join(" ")} />
+                  {trendPoints.map((point) => (
+                    <g key={`${point.date}-${point.x}`}>
+                      <circle cx={point.x} cy={point.y} r="6" />
+                      <text className="trend-value" x={point.x} y={point.y - 12} textAnchor="middle">{point.value}%</text>
+                      <text x={point.x} y="238" textAnchor="middle">{point.date}</text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            ) : (
+              <p>선택한 시험과 주차에 저장된 학습기록이 없습니다.</p>
+            )}
+            <div className="feedback-learning-content">
+              <strong>학생이 기록한 학습내용</strong>
+              {learningContentMetrics.length ? (
+                learningContentMetrics.map((item, index) => (
+                  <div key={item.label} style={{ "--content-color": academyPastels[index % academyPastels.length] } as CSSProperties}>
+                    <span>{item.label}</span><i><em style={{ width: `${clamp(item.value)}%` }} /></i><b>{item.value}%</b>
+                  </div>
+                ))
+              ) : (
+                <small>세부 학습내용을 기록하면 여기에 자동 반영됩니다.</small>
+              )}
+            </div>
+          </section>
           <div className="feedback-bars">
-            {fields.map(([label, key]) => (
-              <div key={key}>
+            {fields.map(([label, key], index) => (
+              <div
+                key={key}
+                style={
+                  {
+                    "--area-color": academyPastels[index],
+                  } as CSSProperties
+                }
+              >
                 <span>{label}</span>
                 <i>
                   <em style={{ width: `${clamp(latest?.[key] || 0)}%` }} />

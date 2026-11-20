@@ -1,0 +1,41 @@
+@media (max-width: 480px) and (orientation: portrait) {
+  .study-page {
+    min-height: 100svh;
+    overflow-x: hidden;
+  }
+
+  .study-login {
+    min-height: calc(100svh - 64px);
+    padding: 20px 16px 42px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .study-login form {
+    order: -1;
+    width: 100%;
+    margin: 0;
+    padding: 28px 22px;
+    display: block;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .study-login-copy {
+    width: 100%;
+  }
+
+  .study-login-copy h1 {
+    font-size: 34px;
+  }
+
+  .study-login-copy > span {
+    margin: 18px 0 22px;
+  }
+
+  .study-login-copy > div {
+    margin-top: 9px;
+  }
+}

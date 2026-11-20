@@ -1,0 +1,43 @@
+/* Screen-only AcademyFit palette. Records, actions and printed reports are unchanged. */
+@media screen {
+  .admin-page {
+    --ink: #223438;
+    --muted: #586d70;
+    --blue: #18786a;
+    --blue-dark: #15594f;
+    --line: #d6e8df;
+    --af-bg: #fcf5f1;
+    --af-card: #fffdfa;
+    --af-ink: #223438;
+    --af-muted: #586d70;
+    --af-teal: #18786a;
+    --af-teal-dark: #15594f;
+    --af-line: #d6e8df;
+    color: var(--ink);
+    background: var(--af-bg) !important;
+  }
+  .admin-page.admin-login-page { background: radial-gradient(circle at 15% 10%, #e0f4ed, transparent 45%), #fcf5f1 !important; }
+  .admin-page :is(h1, h2, h3, .admin-record-summary strong) { color: var(--ink) !important; }
+  .admin-page :is(.admin-kicker, .admin-record-heading > div > p, .admin-card-heading p) { color: var(--blue) !important; }
+  .admin-page :is(.admin-login, .admin-card, .admin-record-card, .admin-dashboard-status > div, .admin-page-hub > a) { border-color: var(--line) !important; background: #fffdfa !important; box-shadow: 0 14px 38px rgba(21, 89, 79, .06) !important; }
+  .admin-page .admin-login-mark { color: transparent; background: #fff url('/academyfit-ai-symbol.png') center/contain no-repeat; box-shadow: none; font-size: 0; }
+  .admin-page :is(.admin-section-tabs, .admin-record-toolbar, .admin-record-table thead) { border-color: var(--line) !important; background: #f1faf6 !important; }
+  .admin-page .admin-section-tabs > strong { color: var(--blue-dark); }
+  .admin-page .admin-section-tabs a { color: var(--blue-dark); }
+  .admin-page .admin-section-tabs a:hover { color: var(--blue-dark); background: #e0f4ed; }
+  .admin-page :is(.admin-header-actions a, .admin-header-actions button, .admin-record-toolbar button, .admin-calendar-add) { color: var(--blue-dark) !important; background: #e0f4ed !important; border-color: #b5dfcf !important; }
+  .admin-page :is(.admin-record-toolbar a, .admin-save-bar button, .admin-login form button, .admin-calendar-save, .monthly-report-controls button) { color: #fff !important; background: var(--blue-dark) !important; border-color: var(--blue-dark) !important; }
+  .admin-page :is(.admin-record-summary article, .admin-story, .admin-literacy-card) { border-color: var(--line); background: #e0f4ed; }
+  .admin-page .admin-record-summary article:nth-child(even) { background: #fce8de; border-color: #efded6; }
+  .admin-page :is(.admin-dashboard-status > div > span, .admin-page-hub > a > span, .admin-card-heading > span) { background: var(--blue-dark); }
+  .admin-page .admin-record-table th { color: var(--blue-dark); background: #f1faf6; border-color: var(--line); }
+  .admin-page .admin-record-table td { color: var(--ink); border-color: #e6eee9; }
+  .admin-page .admin-record-table tbody tr:hover { background: #f6fbf8; }
+  .admin-page .admin-record-table td > a { color: var(--blue); }
+  .admin-page :is(.admin-record-heading small, .admin-header > div:first-child > p:last-child, .admin-record-summary span) { color: var(--muted); }
+  .admin-page .admin-result-send > button:first-of-type { color: #fff; background: var(--blue-dark); }
+  .admin-page :is(.admin-level-print-button, .admin-result-send .admin-message-copy) { color: var(--blue-dark); background: #e0f4ed; }
+  .admin-page :is(.admin-save-bar, .admin-send-feedback.success) { color: var(--blue-dark); border-color: #b5dfcf; background: #e0f4ed; }
+  .admin-page :is(.admin-story > strong, .admin-literacy-card > strong, .admin-story > div b) { color: var(--blue-dark); }
+  .admin-page :is(input, select, textarea):focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+}

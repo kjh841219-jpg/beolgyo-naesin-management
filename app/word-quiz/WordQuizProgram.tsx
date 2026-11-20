@@ -8,13 +8,14 @@ import { cheonjaeSoyeongsunMiddle1Lesson7WordSets } from "./cheonjaeSoyeongsunMi
 import { cheonjaeSoyeongsunMiddle2Lesson7WordSets } from "./cheonjaeSoyeongsunMiddle2Lesson7Words";
 import { bisangHwangJongbaeMiddle2Lesson7WordSets } from "./bisangHwangJongbaeMiddle2Lesson7Words";
 import { dongaYoonJeongmiMiddle3Lessons7And8WordSets } from "./dongaYoonJeongmiMiddle3Lessons7And8Words";
+import { requestedNovemberWordSets } from "./requestedNovemberWordSets";
 import { speakEnglish, stopEnglishSpeech } from "../lib/speakEnglish";
 import {shuffleQuizItems} from "../lib/quizGrading";
 import {sendTestEmailNotification} from "../test-email";
 
 type Mode = "study" | "meaning" | "spelling" | "mixed";
 type PrintMode = "meaning" | "spelling" | "mixed";
-const wordSets=[...baseWordSets,...supplementalWordSets,...dongaYoonJeongmiLessons7And8WordSets,...dongaYoonJeongmiMiddle2Lessons7And8WordSets,...cheonjaeSoyeongsunMiddle1Lesson7WordSets,...cheonjaeSoyeongsunMiddle2Lesson7WordSets,...bisangHwangJongbaeMiddle2Lesson7WordSets,...dongaYoonJeongmiMiddle3Lessons7And8WordSets];
+const wordSets=[...baseWordSets,...supplementalWordSets,...dongaYoonJeongmiLessons7And8WordSets,...dongaYoonJeongmiMiddle2Lessons7And8WordSets,...cheonjaeSoyeongsunMiddle1Lesson7WordSets,...cheonjaeSoyeongsunMiddle2Lesson7WordSets,...bisangHwangJongbaeMiddle2Lesson7WordSets,...dongaYoonJeongmiMiddle3Lessons7And8WordSets,...requestedNovemberWordSets];
 const numberOrder=(value:string)=>Number.parseInt(value.match(/\d+/)?.[0]||"999",10);
 const clean = (s: string) =>
   s.toLowerCase().replace(/[’]/g, "'").replace(/[~·,./()\s-]/g, "");

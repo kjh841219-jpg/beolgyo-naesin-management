@@ -4,16 +4,16 @@ import {useEffect,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 
 const tasksByStage:Record<string,string[]>={
- "4주 전 · 기초 정리":["첫 번째 단원 단어 암기","첫 번째 단원 대화문 암기","첫 번째 단원 본문 암기"],
- "3주 전 · 본문 암기·서술형":["첫 번째 단원 문법 설명","첫 번째 단원 문법 정리","문제풀이","오답노트","그래머 인사이트 문법 설명 듣기","그래머 인사이트 문법 문제풀기 및 풀이"],
- "2주 전 · 실전 서술형":["두 번째 단원 및 교과서 외부지문 단어 암기","두 번째 단원 및 교과서 외부지문 대화문 암기","두 번째 단원 및 교과서 외부지문 본문 암기","외부지문 설명 듣기","외부지문 외우기","외부지문 문제풀기 및 풀이"],
- "1주 전 · 최종 마무리":["두 번째 단원 문법 설명","두 번째 단원 문법 정리","문제풀이","오답노트","마지막 학교 프린트물 점검"],
+ "1주차":["첫 번째 단원 단어 암기","첫 번째 단원 대화문 암기","첫 번째 단원 본문 암기"],
+ "2주차":["첫 번째 단원 문법 설명","첫 번째 단원 문법 정리","문제풀이","오답노트","그래머 인사이트 문법 설명 듣기","그래머 인사이트 문법 문제풀기 및 풀이"],
+ "3주차":["두 번째 단원 및 교과서 외부지문 단어 암기","두 번째 단원 및 교과서 외부지문 대화문 암기","두 번째 단원 및 교과서 외부지문 본문 암기","외부지문 설명 듣기","외부지문 외우기","외부지문 문제풀기 및 풀이"],
+ "4주차":["두 번째 단원 문법 설명","두 번째 단원 문법 정리","문제풀이","오답노트","마지막 학교 프린트물 점검"],
 };
 const commonTasks=[...new Set(Object.values(tasksByStage).flat())];
 type WeekEntry={selected:string[];scores:Record<string,number>};
 
 export default function StudyExtraScores(){
- const[host,setHost]=useState<HTMLElement|null>(null),[stage,setStage]=useState("4주 전 · 기초 정리"),[selected,setSelected]=useState<string[]>(tasksByStage["4주 전 · 기초 정리"]),[scores,setScores]=useState<Record<string,number>>({}),[customTask,setCustomTask]=useState("");
+ const[host,setHost]=useState<HTMLElement|null>(null),[stage,setStage]=useState("1주차"),[selected,setSelected]=useState<string[]>(tasksByStage["1주차"]),[scores,setScores]=useState<Record<string,number>>({}),[customTask,setCustomTask]=useState("");
  const savedByStage=useRef<Record<string,WeekEntry>>({});
  useEffect(()=>{savedByStage.current[stage]={selected,scores};window.dispatchEvent(new CustomEvent("study-week-task-scores-change",{detail:scores}))},[stage,selected,scores]);
  useEffect(()=>{
@@ -21,7 +21,7 @@ export default function StudyExtraScores(){
   const openStage=(value:string)=>{const remembered=savedByStage.current[value],defaults=tasksByStage[value]||[];setStage(value);setSelected(remembered?.selected||defaults);setScores(remembered?.scores||{});setCustomTask("")};
   const onStage=()=>{if(select)openStage(select.value)};
   const onCard=(event:Event)=>{const value=(event as CustomEvent<{value?:string}>).detail?.value;if(value)openStage(value)};
-  const onSaved=(event:Event)=>{const detail=(event as CustomEvent<{path?:string;ok?:boolean}>).detail;if(detail?.ok&&detail.path==="/api/student/records"){savedByStage.current={};const value=select?.value||"4주 전 · 기초 정리";setStage(value);setSelected(tasksByStage[value]||[]);setScores({});setCustomTask("")}};
+  const onSaved=(event:Event)=>{const detail=(event as CustomEvent<{path?:string;ok?:boolean}>).detail;if(detail?.ok&&detail.path==="/api/student/records"){savedByStage.current={};const value=select?.value||"1주차";setStage(value);setSelected(tasksByStage[value]||[]);setScores({});setCustomTask("")}};
   const mount=()=>{if(element?.isConnected)return;const scoreArea=document.querySelector<HTMLElement>(".study-record-form .self-scores");select=document.querySelector<HTMLSelectElement>(".study-record-form .study-basic select[data-study-week]");if(!scoreArea||!select)return;scoreArea.classList.add("week-task-mode");element=document.createElement("div");element.className="study-extra-scores";scoreArea.appendChild(element);select.addEventListener("change",onStage);openStage(select.value);setHost(element)};
   window.addEventListener("study-week-selected",onCard);window.addEventListener("student-record-save-result",onSaved);mount();const observer=new MutationObserver(mount);observer.observe(document.body,{childList:true,subtree:true});return()=>{observer.disconnect();window.removeEventListener("study-week-selected",onCard);window.removeEventListener("student-record-save-result",onSaved);select?.removeEventListener("change",onStage);element?.parentElement?.classList.remove("week-task-mode");element?.remove()};
  },[]);

@@ -89,6 +89,14 @@ if (/\.replace(All)?\s*\(/.test(variantBlock) || /replacements|new RegExp/.test(
   errors.push("문항 변형 로직이 지문·보기의 단어를 변경할 수 있음");
 }
 
+const effectBlocks = [...sourceText.matchAll(/useEffect\(\(\) => \{([\s\S]*?)\n\s*},\s*\[[^\]]*\]\);/g)].map((match) => match[1]);
+if (effectBlocks.some((block) => /createNextAttempt\s*\(/.test(block))) {
+  errors.push("페이지 진입·새로고침만으로 새 문제 회차가 증가함");
+}
+if (!/attempt === 0 \? ["']daily["'] : `retry-\$\{today\}-\$\{attempt\}`/.test(sourceText)) {
+  errors.push("날짜 기본 세트와 당일 재시도 세트의 선택 순서가 분리되지 않음");
+}
+
 // Verify the circular selection rule independently for many pool sizes and
 // attempts: each test is unique internally and a source is not repeated until
 // all sources in that skill pool have appeared.

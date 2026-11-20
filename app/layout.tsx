@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import KakaoSdkLoader from "./KakaoSdkLoader";
 import "./globals.css";
+import "./academyfit-theme.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

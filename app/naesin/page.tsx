@@ -23,8 +23,12 @@ const routines = [
 export default function NaesinPage() {
   return <main className="naesin-page">
     <header className="ns-header">
-      <a className="ns-brand" href="https://vercel-deploy-mauve-one-18.vercel.app/"><span>M</span><b>벌교미래엔영어학원</b></a>
-      <nav aria-label="내신 대비 메뉴"><a className="ns-home-link" href="https://vercel-deploy-mauve-one-18.vercel.app/">벌교미래엔영어 랜딩페이지</a><a href="#plan">4주 계획</a><a href="#system">관리 방식</a><Link className="ns-word-link" href="/word-quiz">단어 퀴즈</Link><Link className="ns-quiz-link" href="/quiz">본문 퀴즈</Link><Link className="ns-dialog-link" href="/dialog-quiz">대화문 퀴즈</Link><Link className="ns-dictionary-link" href="/dictionary">영어사전</Link><Link className="ns-student-login" href="/study-log">학생 로그인</Link><Link className="ns-admin-login" href="/naesin-admin">관리자 로그인</Link><a className="ns-nav-cta" href="https://vercel-deploy-mauve-one-18.vercel.app/#consult">상담 예약</a></nav>
+      <div className="ns-brand-lockup" aria-label="벌교미래엔영어 아카데미핏 AI">
+        <a className="ns-miraen-brand" href="/academy"><span>M</span><b>벌교미래엔영어</b></a>
+        <i aria-hidden="true" />
+        <div className="ns-academyfit-brand"><span aria-hidden="true" /><b>아카데미핏 AI</b></div>
+      </div>
+      <nav aria-label="내신 대비 메뉴"><a href="#plan">4주 계획</a><a href="#system">관리 방식</a><Link className="ns-word-link" href="/word-quiz">단어 퀴즈</Link><Link className="ns-quiz-link" href="/quiz">본문 퀴즈</Link><Link className="ns-dialog-link" href="/dialog-quiz">대화문 퀴즈</Link><Link className="ns-dictionary-link" href="/dictionary">영어사전</Link><Link className="ns-student-login" href="/study-log">학생 로그인</Link><Link className="ns-admin-login" href="/naesin-admin">관리자 로그인</Link><a className="ns-nav-cta" href="/academy#consult">상담 예약</a></nav>
     </header>
 
     <section className="ns-hero">
@@ -32,7 +36,7 @@ export default function NaesinPage() {
         <p className="ns-kicker"><span>BEOLGYO MIRAEN ENGLISH</span> 중등 내신 집중 대비</p>
         <h1>시험 4주 전,<br/><em>점수가 달라지는</em><br/>공부가 시작됩니다.</h1>
         <p className="ns-lead">본문 암기부터 서술형, 오답 정리까지.<br/>해야 할 공부를 주차별로 나누고 매일 확인합니다.</p>
-        <div className="ns-actions"><a className="ns-primary" href="https://vercel-deploy-mauve-one-18.vercel.app/#consult">내신 대비 상담하기 <span>→</span></a><a className="ns-secondary" href="#plan">4주 계획 보기</a></div>
+        <div className="ns-actions"><a className="ns-primary" href="/academy#consult">내신 대비 상담하기 <span>→</span></a><a className="ns-secondary" href="#plan">4주 계획 보기</a></div>
         <div className="ns-proof"><div><b>4WEEK</b><span>시험 범위 맞춤 계획</span></div><div><b>DAILY</b><span>매일 학습 루틴</span></div><div><b>1:1</b><span>오답·서술형 점검</span></div></div>
       </div>
       <div className="ns-hero-board" aria-label="내신 대비 진행 과정">
@@ -67,8 +71,8 @@ export default function NaesinPage() {
 
     <section className="ns-check"><div><p>FINAL CHECKLIST</p><h2>시험 전, 이것까지 확인합니다.</h2></div><ul>{["시험 범위 자료 정리", "본문 암기 완료", "단어장 최종 점검", "서술형 답안 정리", "오답노트 반복", "실전 모의테스트"].map(x=><li key={x}><span>✓</span>{x}</li>)}</ul></section>
 
-    <section className="ns-cta"><p>이번 시험, 준비 방식부터 달라져야 합니다.</p><h2>우리 아이의 시험 범위와 현재 수준에 맞는<br/><strong>4주 내신 계획</strong>을 상담해 보세요.</h2><a href="https://vercel-deploy-mauve-one-18.vercel.app/#consult">내신 대비 상담 예약 <span>→</span></a><small>상담 후 학생별 시험 범위와 학습 상태에 맞춰 안내드립니다.</small></section>
-    <footer className="ns-footer"><a className="ns-brand" href="https://vercel-deploy-mauve-one-18.vercel.app/"><span>M</span><b>벌교미래엔영어학원</b></a><p>학생별 시험 범위와 학습 상태에 따라 수업 및 계획은 달라질 수 있습니다.</p></footer>
-    <div className="ns-mobile-actions"><Link href="/dictionary">영어사전</Link><Link href="/word-quiz">단어 퀴즈</Link><Link href="/quiz">본문 퀴즈</Link><Link href="/dialog-quiz">대화문 퀴즈</Link><a href="https://vercel-deploy-mauve-one-18.vercel.app/#consult">상담 예약</a></div>
+    <section className="ns-cta"><p>이번 시험, 준비 방식부터 달라져야 합니다.</p><h2>우리 아이의 시험 범위와 현재 수준에 맞는<br/><strong>4주 내신 계획</strong>을 상담해 보세요.</h2><a href="/academy#consult">내신 대비 상담 예약 <span>→</span></a><small>상담 후 학생별 시험 범위와 학습 상태에 맞춰 안내드립니다.</small></section>
+    <footer className="ns-footer"><a className="ns-brand" href="/academy"><span>M</span><b>벌교미래엔영어학원</b></a><p>학생별 시험 범위와 학습 상태에 따라 수업 및 계획은 달라질 수 있습니다.</p></footer>
+    <div className="ns-mobile-actions"><Link href="/dictionary">영어사전</Link><Link href="/word-quiz">단어 퀴즈</Link><Link href="/quiz">본문 퀴즈</Link><Link href="/dialog-quiz">대화문 퀴즈</Link><a href="/academy#consult">상담 예약</a></div>
   </main>
 }

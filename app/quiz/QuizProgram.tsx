@@ -294,12 +294,24 @@ export default function QuizProgram() {
         .map((p) => p.grade || "중학교 2학년"),
     ),
   ];
+  const lessons = [
+    ...new Set(
+      quizPassages
+        .filter(
+          (p) =>
+            (p.publisher || "천재교육 · 소영순") === currentPublisher &&
+            (p.grade || "중학교 2학년") === currentGrade,
+        )
+        .map((p) => p.lesson || "5과"),
+    ),
+  ].sort((a, b) => numberOrder(a) - numberOrder(b));
   const lessonPassages = quizPassages
     .map((p, i) => ({ p, i }))
     .filter(
       ({ p }) =>
         (p.publisher || "천재교육 · 소영순") === currentPublisher &&
-        (p.grade || "중학교 2학년") === currentGrade,
+        (p.grade || "중학교 2학년") === currentGrade &&
+        (p.lesson || "5과") === currentLesson,
     )
     .sort((a,b)=>numberOrder(a.p.lesson||"5과")-numberOrder(b.p.lesson||"5과")||a.p.title.localeCompare(b.p.title,"ko"));
   const wrongItems = useMemo(
@@ -814,7 +826,32 @@ export default function QuizProgram() {
           </select>
         </label>
         <label>
-          과·본문 선택
+          과 선택
+          <select
+            value={currentLesson}
+            onChange={(e) => {
+              const i = quizPassages.findIndex(
+                (p) =>
+                  (p.publisher || "천재교육 · 소영순") === currentPublisher &&
+                  (p.grade || "중학교 2학년") === currentGrade &&
+                  (p.lesson || "5과") === e.target.value,
+              );
+              if (i < 0) return;
+              setPassage(i);
+              setIndex(0);
+              setAnswer("");
+              setBuilt([]);
+              setChecked(false);
+              setCompletedSentences([]); setCorrectSentences([]); setSolved(0); setScore(0);
+            }}
+          >
+            {lessons.map((lesson) => (
+              <option key={lesson}>{lesson}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          본문 선택
           <select
             value={passage}
             onChange={(e) => {

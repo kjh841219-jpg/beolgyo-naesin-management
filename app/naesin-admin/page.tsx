@@ -11,7 +11,6 @@ import AdminHomeworkCompletions from "./AdminHomeworkCompletions";
 import AdminHomeworkSubmissions from "./AdminHomeworkSubmissions";
 import AdminResourceSubmissions from "./AdminResourceSubmissions";
 import AdminStudentMirror from "./AdminStudentMirror";
-import TuitionDashboard from "./TuitionDashboard";
 import "../learning-tools.css";
 import "./admin.css";
 import "./admin-extra.css";
@@ -39,7 +38,6 @@ import "./resource-assignment-state.css";
 import "./resource-upload-progress.css";
 import "./student-mirror.css";
 import "./mobile-portrait.css";
-import "./tuition.css";
 
 export const dynamic = "force-dynamic";
 
@@ -49,5 +47,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <AdminGate><StudentAdmin /><TuitionDashboard /><FeedbackReportTools /><AdminStudentMirror /><StudentLiveQuiz /><AdminHomeworkSubmissions /><AdminWrongAnswers /><AdminHomeworkCompletions /><AdminQuizResults /><AdminLearningLinks /><AdminResourceSubmissions /><AdminStudyMaterials /></AdminGate>;
+  return <AdminGate><StudentAdmin /><FeedbackReportTools /><AdminStudentMirror /><StudentLiveQuiz /><AdminHomeworkSubmissions /><AdminWrongAnswers /><AdminHomeworkCompletions /><AdminQuizResults /><AdminLearningLinks /><AdminResourceSubmissions /><AdminStudyMaterials /></AdminGate>;
 }

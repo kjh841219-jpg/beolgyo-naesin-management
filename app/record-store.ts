@@ -2,7 +2,7 @@ import "server-only";
 
 import { neon } from "@neondatabase/serverless";
 import { get, list } from "@vercel/blob";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 
 export type ConsultationRecord = {
   id: string;
@@ -142,6 +142,34 @@ export async function setJsonSetting<T>(key: string, value: T) {
     VALUES (${key}, ${JSON.stringify(value)}::jsonb, NOW())
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
   `;
+}
+
+export async function getKakaoRoomSettings(): Promise<Record<string, string>> {
+  await ensureSchema();
+  const rows = await database()`SELECT value FROM academy_settings WHERE key LIKE 'kakao-room-v1:%'`;
+  const rooms: Record<string, string> = Object.create(null);
+  for (const row of rows) {
+    const value = row.value as { contactKey?: unknown; room?: unknown };
+    if (typeof value?.contactKey === "string" && typeof value.room === "string" && !["__proto__", "constructor", "prototype"].includes(value.contactKey)) rooms[value.contactKey] = value.room;
+  }
+  return rooms;
+}
+
+export async function saveKakaoRoomSettings(rooms: Record<string, string>, replace: boolean) {
+  await ensureSchema();
+  const sql = database();
+  // One row per contact avoids unrelated bindings being lost to concurrent saves.
+  for (const [contactKey, room] of Object.entries(rooms)) {
+    const key = `kakao-room-v1:${createHash("sha256").update(contactKey).digest("hex")}`;
+    const value = JSON.stringify({ contactKey, room });
+    if (replace) {
+      await sql`INSERT INTO academy_settings (key,value,updated_at) VALUES (${key},${value}::jsonb,NOW()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()`;
+    } else {
+      // Importing an old browser never silently changes an existing recipient.
+      await sql`INSERT INTO academy_settings (key,value,updated_at) VALUES (${key},${value}::jsonb,NOW()) ON CONFLICT (key) DO NOTHING`;
+    }
+  }
+  return getKakaoRoomSettings();
 }
 
 export function cleanText(value: unknown, maxLength = 200) {

@@ -2,7 +2,7 @@ import type {DialogSet} from "./dialogQuizData";
 
 const l=(speaker:string,en:string,ko:string)=>({speaker,en,ko});
 const source7="(2022개정)2025년_중1_동아(윤정미)_7과_[01]내용정리 플러스 (1).pdf";
-const source8="(2022개정)2025년_중1_동아(윤정미)_8과_[01]내용정리 플러스.pdf";
+const source8="(2022개정)2025년_중1_동아(윤정미)_8과_[01]내용정리 플러스 (1).pdf";
 
 export const dongaYoonJeongmiLessons7And8DialogSets:DialogSet[]=[
   {publisher:"동아출판 · 윤정미",grade:"중학교 1학년",lesson:"7과",title:"민수의 장래 희망",source:source7,lines:[

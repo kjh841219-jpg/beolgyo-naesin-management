@@ -1215,7 +1215,9 @@ export default function FeedbackReportTools() {
         }),
         data = await response.json();
       setMessage(
-        response.ok ? data.message : data.error || "발송에 실패했습니다.",
+        response.ok
+          ? `✅ ${data.message}${data.messageId ? ` · 접수번호 ${data.messageId}` : ""}`
+          : `전송 실패 · ${data.error || "발송에 실패했습니다."}`,
       );
       if (response.ok) closeSendPreview();
     } catch {

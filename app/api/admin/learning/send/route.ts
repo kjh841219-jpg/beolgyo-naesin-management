@@ -5,13 +5,25 @@ async function base64(file: File) {
   for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
   return btoa(binary);
 }
+function truncateUtf8(value: string, maxBytes = 1900) {
+  const encoder = new TextEncoder();
+  if (encoder.encode(value).length <= maxBytes) return value;
+  const suffix = "\n\n※ 전체 피드백은 함께 전송된 그래프 이미지에서 확인해 주세요.";
+  const budget = maxBytes - encoder.encode(suffix).length;
+  let result = "";
+  for (const character of value) {
+    if (encoder.encode(result + character).length > budget) break;
+    result += character;
+  }
+  return `${result.trimEnd()}${suffix}`;
+}
 
 export async function POST(request: Request) {
   console.log("[learning/send] request received");
   if (!(await requireAdmin())) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
   const contentType = request.headers.get("content-type") || "";
   const body: Record<string, unknown> = contentType.includes("multipart/form-data") ? Object.fromEntries(await request.formData()) : await request.json().catch(() => ({}));
-  const channel = clean(body.channel, 10), to = clean(body.to, 20).replace(/\D/g, ""), text = clean(body.text, 1900), studentId = Number(body.studentId);
+  const channel = clean(body.channel, 10), to = clean(body.to, 20).replace(/\D/g, ""), text = truncateUtf8(clean(body.text, 4000)), studentId = Number(body.studentId);
   const image = body.image instanceof File && body.image.size ? body.image : null;
   if (!["sms", "kakao"].includes(channel) || !/^01\d{8,9}$/.test(to) || !text) return Response.json({ error: "채널, 수신번호, 메시지를 확인해 주세요." }, { status: 400 });
   if (image && (image.type !== "image/jpeg" || image.size > 200_000)) return Response.json({ error: "이미지 문자는 JPG 형식, 200KB 이하만 전송할 수 있습니다." }, { status: 400 });
@@ -65,5 +77,5 @@ export async function POST(request: Request) {
     return Response.json({ error: reason.includes("허용되지 않은 IP") ? "솔라피 API Key의 IP 접근 제한을 해제해 주세요. Vercel 서버 IP는 변경될 수 있습니다." : reason }, { status: 502 });
   }
   console.log("[learning/send] accepted", { studentId, channel: imageId ? "mms" : channel, providerId });
-  return Response.json({ ok: true, message: imageId ? "그래프 이미지와 학습 피드백이 솔라피 MMS로 정상 접수되었습니다." : "학습 피드백 문자가 솔라피에 정상 접수되었습니다.", messageId: providerId, imageId: imageId || undefined });
+  return Response.json({ ok: true, message: imageId ? "솔라피 MMS 정상 접수 완료 · 그래프 이미지와 요약 문자가 전송 대기열에 접수되었습니다." : "솔라피 문자 정상 접수 완료 · 학습 피드백이 전송 대기열에 접수되었습니다.", messageId: providerId, imageId: imageId || undefined });
 }
